@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { useGallery } from './GalleryProvider';
+import { preloadImages } from '@/lib/imageCache';
 
 const useMedia = (queries, values, defaultValue) => {
   const get = () => values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue;
@@ -34,19 +35,6 @@ const useMeasure = () => {
   }, []);
 
   return [ref, size];
-};
-
-const preloadImages = async urls => {
-  await Promise.all(
-    urls.map(
-      src =>
-        new Promise(resolve => {
-          const img = new Image();
-          img.src = src;
-          img.onload = img.onerror = () => resolve();
-        })
-    )
-  );
 };
 
 const Masonry = ({
@@ -99,7 +87,8 @@ const Masonry = ({
   };
 
   useEffect(() => {
-    preloadImages(items.map(i => i.img)).then(() => setImagesReady(true));
+    const urls = items.map(i => i.img);
+    preloadImages(urls).then(() => setImagesReady(true));
   }, [items]);
 
   const grid = useMemo(() => {
@@ -197,11 +186,17 @@ const Masonry = ({
     return Math.max(...grid.map(item => item.y + item.h)) + 16;
   }, [grid]);
 
-  const { openGallery } = useGallery();
+  const { openGallery, openAlbum } = useGallery();
 
-  const handleImageClick = (clickedItem) => {
-    const clickedIndex = items.findIndex(item => item.id === clickedItem.id);
-    openGallery(items, clickedIndex);
+  const handleItemClick = (clickedItem) => {
+    if (clickedItem.type === 'album' && clickedItem.albumItems) {
+      // Open album in masonry view
+      openAlbum(clickedItem.albumItems, clickedItem.albumName || 'Album');
+    } else {
+      // Open gallery for images
+      const clickedIndex = items.findIndex(item => item.id === clickedItem.id);
+      openGallery(items, clickedIndex);
+    }
   };
 
   return (
@@ -212,7 +207,7 @@ const Masonry = ({
           data-key={item.id}
           className="absolute box-content cursor-pointer"
           style={{ willChange: 'transform, width, height, opacity' }}
-          onClick={() => handleImageClick(item)}
+          onClick={() => handleItemClick(item)}
           onMouseEnter={e => handleMouseEnter(item.id, e.currentTarget)}
           onMouseLeave={e => handleMouseLeave(item.id, e.currentTarget)}
         >
@@ -222,6 +217,12 @@ const Masonry = ({
           >
             {colorShiftOnHover && (
               <div className="color-overlay absolute inset-0 bg-gradient-to-tr from-pink-500/50 to-sky-500/50 opacity-0 pointer-events-none" />
+            )}
+            {/* Album indicator */}
+            {item.type === 'album' && (
+              <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
+                📁 {item.albumName || 'Album'} ({item.albumItems?.length || 0})
+              </div>
             )}
             {/* Hover overlay for better visual feedback */}
             <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-300" />

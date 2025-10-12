@@ -9,7 +9,7 @@ interface GalleryWrapperProps {
 }
 
 const GalleryContent = ({ children }: GalleryWrapperProps) => {
-  const { items, currentIndex, isOpen, closeGallery, navigateToIndex } = useGallery();
+  const { items, currentIndex, isOpen, imagesPreloaded, closeGallery, navigateToIndex } = useGallery();
 
   return (
     <>
@@ -18,6 +18,7 @@ const GalleryContent = ({ children }: GalleryWrapperProps) => {
         items={items}
         currentIndex={currentIndex}
         isOpen={isOpen}
+        imagesPreloaded={imagesPreloaded}
         onClose={closeGallery}
         onNavigate={navigateToIndex}
       />

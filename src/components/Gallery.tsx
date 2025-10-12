@@ -3,45 +3,40 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-
-interface GalleryItem {
-  id: string;
-  img: string;
-  url?: string;
-  height: number;
-}
+import { isImageCached } from '@/lib/imageCache';
+import { MediaItem } from './GalleryProvider';
 
 interface GalleryProps {
-  items: GalleryItem[];
+  items: MediaItem[];
   currentIndex: number;
   isOpen: boolean;
+  imagesPreloaded: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
 }
 
-const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryProps) => {
+const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavigate }: GalleryProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [loadedIndex, setLoadedIndex] = useState<number>(-1);
 
   const currentItem = items[currentIndex];
+  const isCached = currentItem ? isImageCached(currentItem.img) : false;
 
   const handlePrevious = useCallback(() => {
     if (items.length <= 1) return;
     const newIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
-    setImageLoaded(false);
     onNavigate(newIndex);
-  }, [items.length, currentIndex, onNavigate]);
+  }, [items, currentIndex, onNavigate]);
 
   const handleNext = useCallback(() => {
     if (items.length <= 1) return;
     const newIndex = currentIndex === items.length - 1 ? 0 : currentIndex + 1;
-    setImageLoaded(false);
     onNavigate(newIndex);
-  }, [items.length, currentIndex, onNavigate]);
+  }, [items, currentIndex, onNavigate]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -72,18 +67,14 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
     if (!overlayRef.current) return;
 
     if (isOpen) {
-      // Prevent body scroll
       document.body.style.overflow = 'hidden';
-      
       gsap.fromTo(
         overlayRef.current,
         { opacity: 0 },
         { opacity: 1, duration: 0.3, ease: 'power2.out' }
       );
     } else {
-      // Restore body scroll
       document.body.style.overflow = 'unset';
-      
       gsap.to(overlayRef.current, {
         opacity: 0,
         duration: 0.2,
@@ -96,19 +87,27 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
     };
   }, [isOpen]);
 
-  // Animate image when it changes
+  // Reset loaded state when index changes
   useEffect(() => {
-    if (!imageRef.current || !imageLoaded) return;
+    setLoadedIndex(-1);
+  }, [currentIndex]);
 
+  // Animate image when it loads
+  useEffect(() => {
+    if (!imageRef.current || loadedIndex !== currentIndex) return;
+
+    // Faster animation for cached images
+    const duration = isCached ? 0.15 : 0.25;
+    
     gsap.fromTo(
       imageRef.current,
-      { opacity: 0, scale: 0.9 },
-      { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }
+      { opacity: 0, scale: 0.95 },
+      { opacity: 1, scale: 1, duration, ease: 'power2.out' }
     );
-  }, [currentIndex, imageLoaded]);
+  }, [loadedIndex, currentIndex, isCached]);
 
   const handleImageLoad = () => {
-    setImageLoaded(true);
+    setLoadedIndex(currentIndex);
   };
 
   // Touch handlers for mobile swipe
@@ -195,18 +194,19 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative max-w-full max-h-full flex items-center justify-center">
-          {!imageLoaded && (
+          {loadedIndex !== currentIndex && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             </div>
           )}
           <img
+            key={currentItem.id}
             ref={imageRef}
             src={currentItem.img}
             alt={`Gallery image ${currentIndex + 1}`}
             className="max-w-full max-h-full object-contain shadow-2xl"
             onLoad={handleImageLoad}
-            style={{ opacity: imageLoaded ? 1 : 0 }}
+            style={{ opacity: 0 }}
           />
         </div>
       </div>
@@ -220,7 +220,6 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
               onClick={(e) => {
                 e.stopPropagation();
                 if (index !== currentIndex) {
-                  setImageLoaded(false);
                   onNavigate(index);
                 }
               }}
@@ -234,6 +233,7 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
                 src={item.img}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             </button>
           ))}
