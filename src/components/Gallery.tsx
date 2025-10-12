@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -29,6 +29,20 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
 
   const currentItem = items[currentIndex];
 
+  const handlePrevious = useCallback(() => {
+    if (items.length <= 1) return;
+    const newIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
+    setImageLoaded(false);
+    onNavigate(newIndex);
+  }, [items.length, currentIndex, onNavigate]);
+
+  const handleNext = useCallback(() => {
+    if (items.length <= 1) return;
+    const newIndex = currentIndex === items.length - 1 ? 0 : currentIndex + 1;
+    setImageLoaded(false);
+    onNavigate(newIndex);
+  }, [items.length, currentIndex, onNavigate]);
+
   // Handle keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
@@ -51,8 +65,7 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, handlePrevious, handleNext]);
 
   // Animate gallery open/close
   useEffect(() => {
@@ -93,20 +106,6 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
       { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }
     );
   }, [currentIndex, imageLoaded]);
-
-  const handlePrevious = () => {
-    if (items.length <= 1) return;
-    const newIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
-    setImageLoaded(false);
-    onNavigate(newIndex);
-  };
-
-  const handleNext = () => {
-    if (items.length <= 1) return;
-    const newIndex = currentIndex === items.length - 1 ? 0 : currentIndex + 1;
-    setImageLoaded(false);
-    onNavigate(newIndex);
-  };
 
   const handleImageLoad = () => {
     setImageLoaded(true);
