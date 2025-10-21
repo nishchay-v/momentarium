@@ -11,6 +11,9 @@ export interface MediaItem {
   type?: 'image' | 'album';
   albumItems?: MediaItem[];
   albumName?: string;
+  // Upload-specific properties
+  isUploaded?: boolean;
+  file?: File;
 }
 
 interface GalleryContextType {
@@ -20,11 +23,20 @@ interface GalleryContextType {
   imagesPreloaded: boolean;
   navigationStack: MediaItem[][];
   currentAlbumName: string | null;
+  // Upload state
+  uploadedItems: MediaItem[];
+  isUploading: boolean;
+  uploadError: string | null;
+  // Gallery actions
   openGallery: (items: MediaItem[], startIndex: number) => void;
   closeGallery: () => void;
   navigateToIndex: (index: number) => void;
   openAlbum: (albumItems: MediaItem[], albumName: string) => void;
   navigateBack: () => void;
+  // Upload actions
+  addUploadedImages: (files: File[]) => Promise<void>;
+  deleteUploadedImage: (id: string) => void;
+  clearUploadedImages: () => void;
 }
 
 const GalleryContext = createContext<GalleryContextType | undefined>(undefined);
@@ -48,6 +60,11 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   const [imagesPreloaded, setImagesPreloaded] = useState(false);
   const [navigationStack, setNavigationStack] = useState<MediaItem[][]>([]);
   const [currentAlbumName, setCurrentAlbumName] = useState<string | null>(null);
+  
+  // Upload state
+  const [uploadedItems, setUploadedItems] = useState<MediaItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Preload remaining images in background when gallery opens
   useEffect(() => {
@@ -157,6 +174,31 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     }
   };
 
+  // Upload methods
+  const addUploadedImages = async (files: File[]) => {
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      const { filesToMediaItems } = await import('@/lib/imageStore');
+      const newMediaItems = await filesToMediaItems(files);
+      setUploadedItems(prev => [...prev, ...newMediaItems]);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload images');
+      console.error('Upload error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const deleteUploadedImage = (id: string) => {
+    setUploadedItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearUploadedImages = () => {
+    setUploadedItems([]);
+  };
+
   const value: GalleryContextType = {
     items,
     currentIndex,
@@ -164,11 +206,20 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     imagesPreloaded,
     navigationStack,
     currentAlbumName,
+    // Upload state
+    uploadedItems,
+    isUploading,
+    uploadError,
+    // Gallery actions
     openGallery,
     closeGallery,
     navigateToIndex,
     openAlbum,
     navigateBack,
+    // Upload actions
+    addUploadedImages,
+    deleteUploadedImage,
+    clearUploadedImages,
   };
 
   return (
