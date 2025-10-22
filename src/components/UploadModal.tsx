@@ -144,7 +144,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-186px)]">
           {/* Drag and Drop Zone */}
           {previewFiles.length === 0 && (
             <div

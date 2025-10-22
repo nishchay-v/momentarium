@@ -187,13 +187,13 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
       {/* Main image container */}
       <div
         ref={containerRef}
-        className="flex items-center justify-center w-full h-full p-4 md:p-8"
+        className="flex items-center justify-center w-full h-screen p-4 md:p-8"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative max-w-full max-h-full flex items-center justify-center">
+        <div className="relative h-100 max-w-full max-h-full flex items-center justify-center">
           {loadedIndex !== currentIndex && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
