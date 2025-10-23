@@ -116,8 +116,7 @@ const Masonry = ({
 
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
-      const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
-
+      
       if (!hasMounted.current) {
         const start = getInitialPosition(item);
         gsap.fromTo(
@@ -126,13 +125,13 @@ const Masonry = ({
             opacity: 0,
             x: start.x,
             y: start.y,
-            width: item.w,
-            height: item.h,
+            // Don't set width/height here since they're set in style
             ...(blurToFocus && { filter: 'blur(10px)' })
           },
           {
             opacity: 1,
-            ...animProps,
+            x: item.x,
+            y: item.y,
             ...(blurToFocus && { filter: 'blur(0px)' }),
             duration: 0.8,
             ease: 'power3.out',
@@ -141,7 +140,10 @@ const Masonry = ({
         );
       } else {
         gsap.to(selector, {
-          ...animProps,
+          x: item.x,
+          y: item.y,
+          width: item.w,
+          height: item.h,
           duration,
           ease,
           overwrite: 'auto'
@@ -206,7 +208,14 @@ const Masonry = ({
           key={item.id}
           data-key={item.id}
           className="absolute box-content cursor-pointer"
-          style={{ willChange: 'transform, width, height, opacity' }}
+          style={{ 
+            willChange: 'transform, width, height, opacity',
+            // Set initial positions immediately to prevent left-stacking
+            transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
+            width: `${item.w}px`,
+            height: `${item.h}px`,
+            opacity: hasMounted.current ? 1 : 0 // Hide initially if not mounted
+          }}
           onClick={() => handleItemClick(item)}
           onMouseEnter={e => handleMouseEnter(item.id, e.currentTarget)}
           onMouseLeave={e => handleMouseLeave(item.id, e.currentTarget)}
