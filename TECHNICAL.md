@@ -434,6 +434,57 @@ console.log(`Preloaded ${urls.length} images in ${performance.now() - start}ms`)
 ### Issue: Images load slowly
 **Solution:** Check network throttling and cache status with `isImageCached()`
 
+### Issue: Images appear stacked on the left during initial load (Fixed in v1.1)
+**Problem:** Masonry items were rendering with default positioning before GSAP animations applied proper grid positions.
+
+**Root Cause:** Race condition between container width measurement and grid calculation causing elements to render at `left: 0, top: 0`.
+
+**Solution:** Set initial positions immediately in CSS instead of waiting for GSAP:
+```jsx
+style={{ 
+  willChange: 'transform, width, height, opacity',
+  transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
+  width: `${item.w}px`,
+  height: `${item.h}px`,
+  opacity: hasMounted.current ? 1 : 0
+}}
+```
+
+### Issue: Photos disappearing when returning from photo viewer in albums (Fixed in v1.1)
+**Problem:** When users opened a photo from an album and closed the viewer, they would be taken out of the album context.
+
+**Root Cause 1:** Demo page was using `navigationStack.length > 0` to determine item display, but this remained true after gallery closed while `contextItems` got cleared.
+
+**Root Cause 2:** `closeGallery()` was clearing all items regardless of album context.
+
+**Solutions:**
+1. **Updated item selection logic** in demo page:
+```tsx
+// Before: Used navigationStack presence
+const displayItems = navigationStack.length > 0 ? contextItems : demoItems;
+
+// After: Use album context and item validity  
+const displayItems = currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
+```
+
+2. **Conditional item clearing** in `closeGallery()`:
+```tsx
+setTimeout(() => {
+  if (!currentAlbumName) {
+    // Only clear if we're not viewing an album
+    setItems([]);
+    setCurrentIndex(0);
+    setImagesPreloaded(false);
+  } else {
+    // If in album, keep items but reset state
+    setCurrentIndex(0);
+    setImagesPreloaded(false);
+  }
+}, 300);
+```
+
+**Result:** Users can now navigate from album → photo viewer → back to album seamlessly.
+
 ## Future Enhancements
 
 - Virtual scrolling for large galleries

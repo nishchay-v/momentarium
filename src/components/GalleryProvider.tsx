@@ -139,10 +139,18 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   const closeGallery = () => {
     setIsOpen(false);
     // Delay clearing items to allow for exit animation
+    // Only clear items if we're not in an album context
     setTimeout(() => {
-      setItems([]);
-      setCurrentIndex(0);
-      setImagesPreloaded(false);
+      if (!currentAlbumName) {
+        // Only clear if we're not viewing an album
+        setItems([]);
+        setCurrentIndex(0);
+        setImagesPreloaded(false);
+      } else {
+        // If in album, just reset index and preload state but keep items
+        setCurrentIndex(0);
+        setImagesPreloaded(false);
+      }
     }, 300);
   };
 

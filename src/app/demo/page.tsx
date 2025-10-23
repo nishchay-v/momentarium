@@ -7,10 +7,11 @@ import { useGallery } from '@/components/GalleryProvider';
 import { demoItems } from '@/lib/demoData';
 
 function DemoMasonryView() {
-  const { items: contextItems, navigationStack } = useGallery();
+  const { items: contextItems, currentAlbumName } = useGallery();
   
-  // Use context items if in album, otherwise use demo items
-  const displayItems = navigationStack.length > 0 ? contextItems : demoItems;
+  // Use context items if we're currently in an album context (not just if navigationStack exists)
+  // The key is checking if we're actually viewing album content, not just if we've navigated before
+  const displayItems = currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
   
   return (
     <>
