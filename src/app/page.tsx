@@ -1,118 +1,40 @@
-'use client';
-
-import Masonry from '@/components/MasonryWrapper';
-import GalleryWrapper from '@/components/GalleryWrapper';
-import Breadcrumb from '@/components/Breadcrumb';
-import UploadModal from '@/components/UploadModal';
-import { useGallery } from '@/components/GalleryProvider';
-import { useState } from 'react';
-import { Upload, Image as ImageIcon, Plus } from 'lucide-react';
-import Link from 'next/link';
-
-function UploadMasonryView() {
-  const { uploadedItems, items: contextItems, navigationStack } = useGallery();
-  
-  // Use context items if in album, otherwise use uploaded items
-  const displayItems = navigationStack.length > 0 ? contextItems : uploadedItems;
-  
+export default function HomePage() {
   return (
-    <>
-      <Breadcrumb />
-      <Masonry
-        items={displayItems}
-        ease="power3.out"
-        duration={0.6}
-        stagger={0.05}
-        animateFrom="bottom"
-        scaleOnHover={true}
-        hoverScale={0.95}
-        blurToFocus={true}
-        colorShiftOnHover={false}
-      />
-    </>
-  );
-}
-
-function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 px-8">
-      <div className="p-6 bg-gray-100 rounded-full mb-6">
-        <ImageIcon className="w-12 h-12 text-gray-400" />
+    <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
+      <h1>🖼️ Momentarium</h1>
+      <p>AI-Powered Image Gallery Service</p>
+      
+      <div style={{ marginTop: '2rem' }}>
+        <h2>API Endpoints</h2>
+        <ul>
+          <li>
+            <code>POST /api/uploads/generate-urls</code> - Generate upload URLs
+          </li>
+          <li>
+            <code>POST /api/galleries/process</code> - Process images into albums
+          </li>
+          <li>
+            <code>GET /api/jobs/[jobId]/status</code> - Check processing status
+          </li>
+          <li>
+            <code>GET /api/galleries/[userId]</code> - Get user's gallery
+          </li>
+        </ul>
       </div>
-      <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-        Upload Your First Images
-      </h2>
-      <p className="text-gray-600 text-center mb-8 max-w-md">
-        Create your personal gallery by uploading images. You can organize them into albums and view them in fullscreen.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={onUploadClick}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          <Upload className="w-5 h-5" />
-          Upload Images
-        </button>
-        <Link
-          href="/demo"
-          className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-        >
-          <ImageIcon className="w-5 h-5" />
-          View Demo Gallery
-        </Link>
+
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Quick Start</h2>
+        <ol>
+          <li>Configure your environment variables (see .env.example)</li>
+          <li>Run database migrations: <code>npm run db:migrate</code></li>
+          <li>Use the API endpoints or the client SDK</li>
+        </ol>
       </div>
-    </div>
-  );
-}
 
-function UploadPageContent() {
-  const { uploadedItems } = useGallery();
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  return (
-    <div className="font-sans min-h-screen p-8 pb-20 sm:p-20">
-      <main className="w-full max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Gallery</h1>
-            <p className="text-gray-600">
-              {uploadedItems.length > 0 
-                ? `${uploadedItems.length} image${uploadedItems.length !== 1 ? 's' : ''} in your gallery`
-                : 'Upload images to get started'
-              }
-            </p>
-          </div>
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Upload
-          </button>
-        </div>
-
-        {/* Content */}
-        {uploadedItems.length > 0 ? (
-          <UploadMasonryView />
-        ) : (
-          <EmptyState onUploadClick={() => setIsUploadModalOpen(true)} />
-        )}
-
-        {/* Upload Modal */}
-        <UploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-        />
-      </main>
-    </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <GalleryWrapper>
-      <UploadPageContent />
-    </GalleryWrapper>
+      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
+        <h3>📚 Documentation</h3>
+        <p>See the <a href="https://github.com/yourusername/momentarium/blob/main/README.md">README.md</a> for complete documentation.</p>
+      </div>
+    </main>
   );
 }

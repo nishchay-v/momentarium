@@ -1,285 +1,385 @@
-# Momentarium - Gallery & Album System
+# Momentarium
 
-A high-performance, animated masonry gallery with nested album support.
+An AI-powered image gallery service that automatically organizes your photos into thematic albums with creative titles and descriptions. Built with Next.js, PostgreSQL, AWS S3, and Google Gemini AI.
 
-## Features
+## 🌟 Features
 
-✅ **Responsive Masonry Grid** - Animated layout (1-5 columns)  
-✅ **Fullscreen Gallery** - Keyboard, touch, and swipe navigation  
-✅ **Album Support** - Nested collections with breadcrumb navigation  
-✅ **Smart Image Caching** - Preload current and adjacent images  
-✅ **Smooth Animations** - GSAP-powered transitions  
-✅ **Type-Safe** - Full TypeScript support  
+- **Direct-to-S3 Uploads**: Client uploads images directly to S3 using pre-signed URLs, reducing server load
+- **AI-Powered Organization**: Google Gemini analyzes your images and groups them into logical, thematic albums
+- **Asynchronous Processing**: Background job processing ensures the UI stays responsive
+- **Single AI Request**: Efficient batching minimizes API calls and costs
+- **Scalable Architecture**: Serverless-native design using Next.js API Routes and Upstash QStash
 
-## Quick Start
+## 🏗️ Architecture Overview
 
-```jsx
-import Masonry from '@/components/MasonryWrapper';
-import GalleryWrapper from '@/components/GalleryWrapper';
-import Breadcrumb from '@/components/Breadcrumb';
+```mermaid
+sequenceDiagram
+    participant Client (Next.js)
+    participant Backend API (Next.js)
+    participant Object Storage (S3)
+    participant Job Queue (QStash)
+    participant Processing API (Next.js)
+    participant AI Model (Gemini)
+    participant Database (PostgreSQL)
 
-const items = [
-  // Album
-  {
-    id: "album-1",
-    img: "album-cover.jpg",
-    type: "album",
-    albumName: "My Album",
-    height: 400,
-    albumItems: [
-      { id: "1-1", img: "photo1.jpg", type: "image", height: 350 },
-      { id: "1-2", img: "photo2.jpg", type: "image", height: 450 },
-    ],
-  },
-  // Single image
-  {
-    id: "2",
-    img: "single.jpg",
-    type: "image",
-    height: 300,
-  },
-];
+    Client->>+Backend API: 1. POST /api/uploads/generate-urls
+    Backend API-->>-Client: 2. Return N signed URLs
 
-export default function Page() {
-  return (
-    <GalleryWrapper>
-      <Breadcrumb />
-      <Masonry items={items} />
-    </GalleryWrapper>
-  );
+    loop For Each Image
+        Client->>+Object Storage: 3. Upload image file directly
+    end
+
+    Client->>+Backend API: 4. POST /api/galleries/process
+    Backend API->>+Database: 5. Create Job record
+    Backend API->>+Job Queue: 6. Enqueue Job
+    Backend API-->>-Client: 7. Return jobId
+
+    Job Queue->>+Processing API: 8. Call /api/jobs/process
+    Processing API->>+AI Model: 9. Analyze all images
+    AI Model-->>-Processing API: 10. Return albums JSON
+
+    Processing API->>+Database: 11. Create albums/images
+    Processing API->>Database: 12. Update job status
+
+    Client->>+Backend API: 13. Poll /api/jobs/{jobId}/status
+    Backend API-->>-Client: 14. Return status/results
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- PostgreSQL database
+- AWS account with S3 bucket
+- Google Gemini API key
+- Upstash QStash account (for job queue)
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone <repository-url>
+cd momentarium
+npm install
+```
+
+2. **Set up environment variables**
+
+Copy the example environment file and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your actual credentials:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/momentarium
+
+# AWS S3
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_S3_BUCKET_NAME=momentarium-images
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key
+
+# Upstash QStash
+QSTASH_URL=https://qstash.upstash.io
+QSTASH_TOKEN=your_qstash_token
+QSTASH_CURRENT_SIGNING_KEY=your_signing_key
+QSTASH_NEXT_SIGNING_KEY=your_next_signing_key
+
+# Next.js App URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Security
+API_SECRET_KEY=your_random_secret_key_here
+```
+
+3. **Set up the database**
+
+Run the database migration:
+
+```bash
+npm run db:migrate
+```
+
+To also seed test data:
+
+```bash
+RUN_SEED=true npm run db:migrate
+```
+
+4. **Start the development server**
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`.
+
+## 📚 API Documentation
+
+### 1. Generate Upload URLs
+
+**POST** `/api/uploads/generate-urls`
+
+Request pre-signed URLs for uploading images directly to S3.
+
+**Request Body:**
+```json
+{
+  "filenames": ["photo1.jpg", "photo2.png"],
+  "userId": 1,
+  "contentTypes": ["image/jpeg", "image/png"]
 }
 ```
 
-## Data Structure
+**Response:**
+```json
+{
+  "urls": [
+    {
+      "uploadUrl": "https://s3.amazonaws.com/...",
+      "storageKey": "users/1/1234567890-photo1.jpg",
+      "filename": "photo1.jpg"
+    }
+  ]
+}
+```
 
-### MediaItem Interface
+### 2. Process Gallery
+
+**POST** `/api/galleries/process`
+
+Initiate background processing to organize images into albums.
+
+**Request Body:**
+```json
+{
+  "imageKeys": ["users/1/1234567890-photo1.jpg", "users/1/1234567891-photo2.png"],
+  "userId": 1
+}
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### 3. Check Job Status
+
+**GET** `/api/jobs/{jobId}/status`
+
+Poll this endpoint to check if processing is complete.
+
+**Response:**
+```json
+{
+  "status": "completed",
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "createdAt": "2025-10-26T10:00:00.000Z",
+  "completedAt": "2025-10-26T10:00:45.000Z",
+  "resultUrl": "/api/galleries/1"
+}
+```
+
+Status values: `pending`, `processing`, `completed`, `failed`
+
+### 4. Get Gallery
+
+**GET** `/api/galleries/{userId}`
+
+Retrieve all albums and images for a user.
+
+**Response:**
+```json
+{
+  "albums": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Summer Adventures",
+      "theme_description": "Vibrant memories of sunny days and outdoor exploration",
+      "created_at": "2025-10-26T10:00:45.000Z",
+      "updated_at": "2025-10-26T10:00:45.000Z",
+      "images": [
+        {
+          "id": 1,
+          "storage_key": "users/1/1234567890-photo1.jpg",
+          "url": "https://s3.amazonaws.com/...",
+          "original_filename": "photo1.jpg",
+          "content_type": "image/jpeg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 🗄️ Database Schema
+
+The application uses PostgreSQL with the following main tables:
+
+- **users**: User accounts
+- **images**: Image metadata and S3 storage keys
+- **albums**: Generated albums with AI-created titles and themes
+- **album_images**: Many-to-many relationship between albums and images
+- **processing_jobs**: Background job tracking
+
+See `database/schema.sql` for the complete schema.
+
+## 🛠️ Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Database | PostgreSQL |
+| Object Storage | AWS S3 |
+| AI Model | Google Gemini Pro Vision |
+| Job Queue | Upstash QStash |
+| ORM | Native pg (PostgreSQL client) |
+| Validation | Zod |
+
+## 🔧 Configuration
+
+### Upload Limits
+
+Edit `src/config/index.ts` to adjust:
 
 ```typescript
-interface MediaItem {
-  id: string;              // Unique identifier
-  img: string;             // Image URL
-  type?: 'image' | 'album'; // Content type
-  height: number;          // For masonry layout
-  
-  // Album-specific
-  albumName?: string;      // Album title
-  albumItems?: MediaItem[]; // Nested items
-  
-  // Optional
-  url?: string;            // External link
+upload: {
+  maxFileSize: 10 * 1024 * 1024, // 10MB per file
+  maxBatchSize: 50, // Max images per batch
+  allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  presignedUrlExpiry: 300, // 5 minutes
 }
 ```
 
-## Components
+### AI Prompt Customization
 
-### Masonry
-Responsive grid layout with animations.
-
-```jsx
-<Masonry
-  items={items}                  // MediaItem[]
-  ease="power3.out"              // GSAP easing
-  duration={0.6}                 // Animation duration
-  stagger={0.05}                 // Delay between items
-  animateFrom="bottom"           // Entry animation
-  scaleOnHover={true}            // Hover effect
-  hoverScale={0.95}              // Scale amount
-  blurToFocus={true}             // Blur animation
-  colorShiftOnHover={false}      // Color overlay
-/>
-```
-
-### Gallery
-Fullscreen image viewer.
-
-**Keyboard Shortcuts:**
-- `←` / `→` - Navigate
-- `Esc` - Close
-
-**Mobile:**
-- Swipe left/right to navigate
-- Tap background to close
-
-### Breadcrumb
-Navigation for albums. Automatically shows when inside an album.
-
-## API
-
-### useGallery Hook
+Modify the prompt in `src/lib/ai.ts` to adjust how albums are generated:
 
 ```typescript
-const {
-  items,              // Current MediaItem[]
-  currentIndex,       // Active item index
-  isOpen,             // Gallery open state
-  imagesPreloaded,    // Current image loaded
-  navigationStack,    // Album navigation history
-  currentAlbumName,   // Current album name
-  openGallery,        // (items, index) => void
-  closeGallery,       // () => void
-  navigateToIndex,    // (index) => void
-  openAlbum,          // (items, name) => void
-  navigateBack,       // () => void
-} = useGallery();
+function generateAlbumCreationPrompt(imageKeys: string[]): string {
+  // Customize the AI instructions here
+}
 ```
 
-### Image Cache
+## 🔐 Security Considerations
+
+1. **API Secret**: The webhook endpoint (`/api/jobs/process`) is protected by an API secret header
+2. **QStash Signature Verification**: Optionally verify QStash signatures for additional security
+3. **Pre-signed URLs**: S3 upload URLs expire after 5 minutes
+4. **User Authentication**: Add authentication middleware to protect user-specific routes (not implemented in this base version)
+
+## 🚀 Deployment
+
+### Vercel Deployment
+
+1. Push your code to GitHub
+2. Import the project in Vercel
+3. Configure environment variables in Vercel dashboard
+4. Deploy
+
+**Important**: Set `NEXT_PUBLIC_APP_URL` to your production URL so QStash can reach your webhook.
+
+### Database Hosting Options
+
+- [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)
+- [Supabase](https://supabase.com/)
+- [Neon](https://neon.tech/)
+
+## 🔄 Workflow Example
 
 ```typescript
-import { preloadImages, isImageCached } from '@/lib/imageCache';
+// 1. Client requests upload URLs
+const { urls } = await fetch('/api/uploads/generate-urls', {
+  method: 'POST',
+  body: JSON.stringify({
+    filenames: ['photo1.jpg', 'photo2.jpg'],
+    userId: 1,
+    contentTypes: ['image/jpeg', 'image/jpeg']
+  })
+}).then(r => r.json());
 
-// Preload images
-await preloadImages(['url1.jpg', 'url2.jpg']);
-
-// Check if cached
-if (isImageCached('url1.jpg')) {
-  // Image is ready
+// 2. Client uploads each file to S3
+for (const { uploadUrl, storageKey } of urls) {
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    body: imageFile,
+    headers: { 'Content-Type': 'image/jpeg' }
+  });
 }
-```
 
-## How It Works
+// 3. Request processing
+const imageKeys = urls.map(u => u.storageKey);
+const { jobId } = await fetch('/api/galleries/process', {
+  method: 'POST',
+  body: JSON.stringify({ imageKeys, userId: 1 })
+}).then(r => r.json());
 
-### Navigation Flow
-
-```
-Home Gallery
-  ├─ Click image → Gallery viewer (instant, pre-loaded)
-  └─ Click album → Album masonry grid
-      ├─ Click image → Gallery viewer (album images only, instant)
-      └─ Back button → Home gallery
-```
-
-### Instant Loading Strategy
-
-Images are **preloaded BEFORE opening** the gallery for instant display:
-
-1. **Before opening** - Current image preloaded synchronously (no delay!)
-2. **On open** - Adjacent ±2 images preloaded immediately
-3. **Background** - Remaining images preloaded (100ms delay)
-4. **On navigate** - Next image preloaded before transition (instant!)
-
-### Album Behavior
-
-- Albums show a folder icon with item count
-- Clicking an album opens its contents in masonry view
-- Breadcrumb appears with "Back" button
-- Navigation stack tracks history
-- Gallery only shows images from current album
-
-## Architecture
-
-```
-src/
-├── lib/
-│   └── imageCache.ts          # Centralized image cache
-├── components/
-│   ├── GalleryProvider.tsx    # State management + preloading
-│   ├── GalleryWrapper.tsx     # Provider wrapper
-│   ├── Gallery.tsx            # Fullscreen viewer
-│   ├── Masonry.jsx            # Grid layout
-│   ├── MasonryWrapper.tsx     # SSR-safe wrapper
-│   └── Breadcrumb.tsx         # Album navigation
-└── app/
-    └── page.tsx               # Main page
-```
-
-## Performance
-
-- **Instant display** - Images preloaded BEFORE gallery opens (zero delay!)
-- **Zero flicker** on transitions
-- **Single request** per image URL
-- **Smart preloading** - Current image loads synchronously, adjacent images in parallel
-
-## Examples
-
-### Programmatic Control
-
-```jsx
-import { useGallery } from '@/components/GalleryProvider';
-
-function MyComponent() {
-  const { openGallery, openAlbum } = useGallery();
+// 4. Poll for completion
+const pollStatus = setInterval(async () => {
+  const { status, resultUrl } = await fetch(`/api/jobs/${jobId}/status`)
+    .then(r => r.json());
   
-  // Open gallery
-  const handleImage = () => {
-    openGallery(items, 0);
-  };
-  
-  // Open album
-  const handleAlbum = () => {
-    openAlbum(albumItems, "My Album");
-  };
-}
+  if (status === 'completed') {
+    clearInterval(pollStatus);
+    // 5. Fetch results
+    const gallery = await fetch(resultUrl).then(r => r.json());
+    console.log('Albums created:', gallery.albums);
+  }
+}, 3000);
 ```
 
-### Mixed Content
+## 📈 Future Enhancements
 
-```jsx
-const items = [
-  // Album
-  {
-    id: "album-1",
-    img: "cover.jpg",
-    type: "album",
-    albumName: "Vacation 2024",
-    height: 400,
-    albumItems: [
-      { id: "v1", img: "beach.jpg", type: "image", height: 350 },
-      { id: "v2", img: "sunset.jpg", type: "image", height: 450 },
-    ],
-  },
-  // Single image
-  {
-    id: "img-1",
-    img: "portrait.jpg",
-    type: "image",
-    height: 500,
-  },
-  // Another album
-  {
-    id: "album-2",
-    img: "work-cover.jpg",
-    type: "album",
-    albumName: "Work Events",
-    height: 350,
-    albumItems: [
-      { id: "w1", img: "meeting.jpg", type: "image", height: 300 },
-    ],
-  },
-];
+- **Generative UI**: Use album titles/themes to generate custom webpage layouts
+- **Advanced Filtering**: Search and filter albums by date, location, or content
+- **Sharing**: Share albums with custom links
+- **Collaborative Albums**: Allow multiple users to contribute to albums
+- **Video Support**: Extend to support video files
+- **Face Recognition**: Group photos by people detected in images
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+
+Ensure your `DATABASE_URL` is correct and the database is accessible:
+
+```bash
+psql $DATABASE_URL -c "SELECT 1"
 ```
 
-## Troubleshooting
+### QStash Webhook Issues
 
-### Images not loading?
-- Check network tab for errors
-- Verify image URLs are accessible
-- Check CORS headers
+- Verify `NEXT_PUBLIC_APP_URL` is set correctly
+- Ensure your webhook endpoint is publicly accessible (use ngrok for local testing)
+- Check QStash logs in the Upstash dashboard
 
-### Gallery flickers?
-- Should be fixed with `key={currentItem.id}`
-- Check browser console for errors
+### AI Model Errors
 
-### Albums not opening?
-- Ensure `type: "album"` is set
-- Verify `albumItems` array exists
-- Check `openAlbum` is imported
+- Verify `GEMINI_API_KEY` is valid
+- Check API quota limits
+- Review prompt structure in `src/lib/ai.ts`
 
-## Browser Support
+## 📝 License
 
-- Modern browsers (Chrome, Firefox, Safari, Edge)
-- Mobile Safari (iOS 12+)
-- Chrome Mobile (Android 8+)
+MIT License - feel free to use this project for your own applications.
 
-## Tech Stack
+## 🤝 Contributing
 
-- **Next.js 14+** - React framework
-- **React 18+** - UI library
-- **TypeScript** - Type safety
-- **GSAP** - Animations
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
+Contributions are welcome! Please open an issue or submit a pull request.
 
-## License
+---
 
-[Your License Here]
+Built with ❤️ using Next.js and AI
