@@ -22,7 +22,11 @@ export const uploadImage = async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch('/api/upload', {
+    // Use environment variable for API URL, fallback to localhost:3001
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const uploadEndpoint = `${apiUrl}/api/upload`;
+
+    const response = await fetch(uploadEndpoint, {
       method: 'POST',
       body: formData,
     });

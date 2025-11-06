@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageToCloudinary } from '@/lib/cloudinary/config';
 
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'http://localhost:3000',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Handle preflight OPTIONS request
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check if the request contains form data
@@ -10,7 +25,10 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: 'No image file provided' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
 
@@ -19,7 +37,10 @@ export async function POST(request: NextRequest) {
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
 
@@ -28,7 +49,10 @@ export async function POST(request: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: 'File size too large. Maximum 10MB allowed.' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
 
@@ -40,11 +64,8 @@ export async function POST(request: NextRequest) {
     const uploadResult = await uploadImageToCloudinary(buffer, {
       // Generate a unique public_id with timestamp
       public_id: `upload_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-      // You can add transformations here if needed
-      transformation: [
-        { quality: 'auto' },
-        { format: 'auto' }
-      ]
+      // Apply quality optimization
+      quality: 'auto'
     });
 
     // Return the upload result
@@ -59,7 +80,10 @@ export async function POST(request: NextRequest) {
         size: uploadResult.bytes,
         created_at: uploadResult.created_at
       }
-    }, { status: 200 });
+    }, { 
+      status: 200,
+      headers: corsHeaders,
+    });
 
   } catch (error) {
     console.error('Upload API Error:', error);
@@ -69,7 +93,10 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Failed to upload image. Please try again.' 
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
 }
@@ -82,5 +109,7 @@ export async function GET() {
     endpoints: {
       POST: '/api/upload - Upload an image file'
     }
+  }, {
+    headers: corsHeaders,
   });
 }

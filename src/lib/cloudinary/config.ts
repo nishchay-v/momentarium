@@ -51,26 +51,22 @@ export const uploadImageToCloudinary = async (
     folder: process.env.CLOUDINARY_UPLOAD_FOLDER || 'momentarium-temp',
     resource_type: 'auto' as const,
     quality: 'auto',
-    format: 'auto',
   };
 
   const uploadOptions = { ...defaultOptions, ...options };
 
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, result) => {
-        if (error) {
-          console.error('Cloudinary upload error:', error);
-          reject(error);
-        } else if (result) {
-          resolve(result as UploadResult);
-        } else {
-          reject(new Error('Upload failed: No result returned'));
-        }
-      }
-    ).end(buffer);
-  });
+  try {
+    // Convert buffer to base64 data URL
+    const base64Data = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+    
+    // Upload using the upload method instead of upload_stream
+    const result = await cloudinary.uploader.upload(base64Data, uploadOptions);
+    
+    return result as UploadResult;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    throw error;
+  }
 };
 
 /**
