@@ -1,4 +1,5 @@
 import { MediaItem } from '@/components/GalleryProvider';
+import { uploadImage, validateImageFile } from '@/lib/api/upload';
 
 /**
  * Generate unique ID for uploaded images
@@ -8,7 +9,7 @@ export const generateImageId = (): string => {
 };
 
 /**
- * Convert File to base64 data URL
+ * Convert File to base64 data URL (for preview purposes)
  */
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -43,7 +44,7 @@ export const getImageDimensions = (file: File): Promise<{ width: number; height:
 };
 
 /**
- * Convert File to MediaItem with proper dimensions
+ * Convert File to MediaItem using Cloudinary backend
  */
 export const fileToMediaItem = async (file: File): Promise<MediaItem> => {
   // Validate file type
@@ -52,7 +53,44 @@ export const fileToMediaItem = async (file: File): Promise<MediaItem> => {
   }
 
   try {
-    // Generate base64 data URL
+    // Upload to Cloudinary via our backend API
+    const uploadResult = await uploadImage(file);
+    
+    if (!uploadResult.success || !uploadResult.data) {
+      throw new Error(uploadResult.error || 'Upload failed');
+    }
+
+    // Calculate display height (maintain aspect ratio, scale to reasonable size)
+    const maxWidth = 600; // Standard width for masonry
+    const aspectRatio = uploadResult.data.height / uploadResult.data.width;
+    const displayHeight = Math.min(maxWidth * aspectRatio, 1000); // Cap at 1000px height
+    
+    return {
+      id: generateImageId(),
+      img: uploadResult.data.url, // Use Cloudinary URL instead of base64
+      url: uploadResult.data.url, // Also set as URL
+      type: 'image',
+      height: Math.round(displayHeight),
+      isUploaded: true,
+      file: file, // Keep reference for potential future use
+    };
+  } catch (error) {
+    throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Convert File to MediaItem for preview (using base64, no backend upload)
+ * This is useful for showing previews before actual upload
+ */
+export const fileToPreviewMediaItem = async (file: File): Promise<MediaItem> => {
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    throw new Error(`Invalid file type: ${file.type}. Only image files are supported.`);
+  }
+
+  try {
+    // Generate base64 data URL for preview
     const base64Url = await fileToBase64(file);
     
     // Get image dimensions
@@ -68,11 +106,11 @@ export const fileToMediaItem = async (file: File): Promise<MediaItem> => {
       img: base64Url,
       type: 'image',
       height: Math.round(displayHeight),
-      isUploaded: true,
-      file: file, // Keep reference for potential future use
+      isUploaded: false, // Mark as not uploaded yet
+      file: file, // Keep reference for upload
     };
   } catch (error) {
-    throw new Error(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Failed to process image preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -103,17 +141,18 @@ export const filesToMediaItems = async (files: File[]): Promise<MediaItem[]> => 
 };
 
 /**
- * Validate file types for upload
+ * Validate file types and size for upload (using backend validation rules)
  */
 export const validateImageFiles = (files: File[]): { valid: File[]; invalid: string[] } => {
   const valid: File[] = [];
   const invalid: string[] = [];
   
   files.forEach(file => {
-    if (file.type.startsWith('image/')) {
+    const validation = validateImageFile(file);
+    if (validation.valid) {
       valid.push(file);
     } else {
-      invalid.push(file.name);
+      invalid.push(`${file.name}: ${validation.error}`);
     }
   });
   

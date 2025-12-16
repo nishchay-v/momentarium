@@ -4,16 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:backend": "next dev --turbopack -p 3001",
+    "dev:full": "./start-servers.sh",
     "build": "next build --turbopack",
     "start": "next start",
+    "start:backend": "next start -p 3001",
     "lint": "eslint"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "gsap": "^3.13.0",
     "lucide-react": "^0.545.0",
+    "multer": "^2.0.2",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -22,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/multer": "^2.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
