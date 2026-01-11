@@ -3,6 +3,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { preloadImages } from '@/lib/imageCache';
 
+// IMAGE PRELOADING CONFIGURATION
+// Number of images to preload on each side of current image
+const PRELOAD_RANGE = 2;
+// Delay before preloading remaining images (ms)
+const PRELOAD_DELAY = 100;
+// Delay before clearing gallery items after close (ms) - allows exit animation
+const GALLERY_CLOSE_DELAY = 300;
+
 export interface MediaItem {
   id: string;
   img: string;
@@ -69,21 +77,20 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   // Preload remaining images in background when gallery opens
   useEffect(() => {
     if (isOpen && items.length > 0 && imagesPreloaded) {
-      const preloadRange = 2;
       const remainingUrls = items
         .filter((item, index) => {
           const distance = Math.min(
             Math.abs(index - currentIndex),
             items.length - Math.abs(index - currentIndex)
           );
-          return distance > preloadRange;
+          return distance > PRELOAD_RANGE;
         })
         .map((item) => item.img);
 
       if (remainingUrls.length > 0) {
         setTimeout(() => {
           preloadImages(remainingUrls);
-        }, 100);
+        }, PRELOAD_DELAY);
       }
     }
   }, [isOpen, items, currentIndex, imagesPreloaded]);
@@ -93,9 +100,8 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     if (!isOpen || !imagesPreloaded) return;
 
     const adjacentUrls: string[] = [];
-    const preloadRange = 2;
 
-    for (let i = -preloadRange; i <= preloadRange; i++) {
+    for (let i = -PRELOAD_RANGE; i <= PRELOAD_RANGE; i++) {
       const index = (currentIndex + i + items.length) % items.length;
       if (items[index]?.img) {
         adjacentUrls.push(items[index].img);
@@ -121,9 +127,8 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     
     // Preload adjacent images immediately in background
     const adjacentUrls: string[] = [];
-    const preloadRange = 2;
     
-    for (let i = -preloadRange; i <= preloadRange; i++) {
+    for (let i = -PRELOAD_RANGE; i <= PRELOAD_RANGE; i++) {
       if (i === 0) continue;
       const index = (startIndex + i + galleryItems.length) % galleryItems.length;
       if (galleryItems[index]?.img) {
@@ -151,7 +156,7 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
         setCurrentIndex(0);
         setImagesPreloaded(false);
       }
-    }, 300);
+    }, GALLERY_CLOSE_DELAY);
   };
 
   const navigateToIndex = async (index: number) => {

@@ -5,6 +5,55 @@ import { gsap } from 'gsap';
 import { useGallery } from './GalleryProvider';
 import { preloadImages } from '@/lib/imageCache';
 
+// RESPONSIVE BREAKPOINTS AND COLUMNS
+// Breakpoint widths for responsive column layout (px)
+const BREAKPOINT_XL = 1500;
+const BREAKPOINT_LG = 1000;
+const BREAKPOINT_MD = 600;
+const BREAKPOINT_SM = 400;
+// Column counts for each breakpoint
+const COLUMNS_XL = 5;
+const COLUMNS_LG = 4;
+const COLUMNS_MD = 3;
+const COLUMNS_SM = 2;
+const COLUMNS_XS = 1;
+
+// LAYOUT CONFIGURATION
+// Gap between masonry items (px)
+const GAP = 16;
+// Height multiplier for items (divides original height)
+const HEIGHT_MULTIPLIER = 2;
+// Bottom padding for container (px)
+const CONTAINER_BOTTOM_PADDING = 16;
+
+// ANIMATION CONFIGURATION
+// Default animation duration (seconds)
+const DEFAULT_DURATION = 0.6;
+// Initial mount animation duration (seconds)
+const INITIAL_ANIMATION_DURATION = 0.8;
+// Stagger delay between items (seconds)
+const DEFAULT_STAGGER = 0.05;
+// Hover animation duration (seconds)
+const HOVER_ANIMATION_DURATION = 0.3;
+// Initial blur amount for blur-to-focus effect (px)
+const INITIAL_BLUR = 10;
+// Final blur amount (px)
+const FINAL_BLUR = 0;
+// Hover scale factor
+const DEFAULT_HOVER_SCALE = 0.95;
+// Color overlay opacity on hover
+const COLOR_OVERLAY_HOVER_OPACITY = 0.3;
+// Color overlay default opacity
+const COLOR_OVERLAY_DEFAULT_OPACITY = 0;
+
+// INITIAL POSITION OFFSETS
+// Offset for items animating from top/bottom (px)
+const VERTICAL_OFFSET = 200;
+// Offset for items animating from left/right (px)
+const HORIZONTAL_OFFSET = 200;
+// Default fallback offset (px)
+const DEFAULT_OFFSET = 100;
+
 const useMedia = (queries, values, defaultValue) => {
   const get = () => values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue;
 
@@ -49,9 +98,14 @@ const Masonry = ({
   colorShiftOnHover = false
 }) => {
   const columns = useMedia(
-    ['(min-width:1500px)', '(min-width:1000px)', '(min-width:600px)', '(min-width:400px)'],
-    [5, 4, 3, 2],
-    1
+    [
+      `(min-width:${BREAKPOINT_XL}px)`,
+      `(min-width:${BREAKPOINT_LG}px)`,
+      `(min-width:${BREAKPOINT_MD}px)`,
+      `(min-width:${BREAKPOINT_SM}px)`
+    ],
+    [COLUMNS_XL, COLUMNS_LG, COLUMNS_MD, COLUMNS_SM],
+    COLUMNS_XS
   );
 
   const [containerRef, { width }] = useMeasure();
@@ -69,20 +123,20 @@ const Masonry = ({
 
     switch (direction) {
       case 'top':
-        return { x: item.x, y: -200 };
+        return { x: item.x, y: -VERTICAL_OFFSET };
       case 'bottom':
-        return { x: item.x, y: window.innerHeight + 200 };
+        return { x: item.x, y: window.innerHeight + VERTICAL_OFFSET };
       case 'left':
-        return { x: -200, y: item.y };
+        return { x: -HORIZONTAL_OFFSET, y: item.y };
       case 'right':
-        return { x: window.innerWidth + 200, y: item.y };
+        return { x: window.innerWidth + HORIZONTAL_OFFSET, y: item.y };
       case 'center':
         return {
           x: containerRect.width / 2 - item.w / 2,
           y: containerRect.height / 2 - item.h / 2
         };
       default:
-        return { x: item.x, y: item.y + 100 };
+        return { x: item.x, y: item.y + DEFAULT_OFFSET };
     }
   };
 
@@ -94,17 +148,16 @@ const Masonry = ({
   const grid = useMemo(() => {
     if (!width) return [];
     const colHeights = new Array(columns).fill(0);
-    const gap = 16;
-    const totalGaps = (columns - 1) * gap;
+    const totalGaps = (columns - 1) * GAP;
     const columnWidth = (width - totalGaps) / columns;
 
     return items.map(child => {
       const col = colHeights.indexOf(Math.min(...colHeights));
-      const x = col * (columnWidth + gap);
-      const height = child.height / 2;
+      const x = col * (columnWidth + GAP);
+      const height = child.height / HEIGHT_MULTIPLIER;
       const y = colHeights[col];
 
-      colHeights[col] += height + gap;
+      colHeights[col] += height + GAP;
       return { ...child, x, y, w: columnWidth, h: height };
     });
   }, [columns, items, width]);
@@ -126,14 +179,14 @@ const Masonry = ({
             x: start.x,
             y: start.y,
             // Don't set width/height here since they're set in style
-            ...(blurToFocus && { filter: 'blur(10px)' })
+            ...(blurToFocus && { filter: `blur(${INITIAL_BLUR}px)` })
           },
           {
             opacity: 1,
             x: item.x,
             y: item.y,
-            ...(blurToFocus && { filter: 'blur(0px)' }),
-            duration: 0.8,
+            ...(blurToFocus && { filter: `blur(${FINAL_BLUR}px)` }),
+            duration: INITIAL_ANIMATION_DURATION,
             ease: 'power3.out',
             delay: index * stagger
           }
@@ -159,13 +212,13 @@ const Masonry = ({
     if (scaleOnHover) {
       gsap.to(`[data-key="${id}"]`, {
         scale: hoverScale,
-        duration: 0.3,
+        duration: HOVER_ANIMATION_DURATION,
         ease: 'power2.out'
       });
     }
     if (colorShiftOnHover) {
       const overlay = element.querySelector('.color-overlay');
-      if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
+      if (overlay) gsap.to(overlay, { opacity: COLOR_OVERLAY_HOVER_OPACITY, duration: HOVER_ANIMATION_DURATION });
     }
   };
 
@@ -173,19 +226,19 @@ const Masonry = ({
     if (scaleOnHover) {
       gsap.to(`[data-key="${id}"]`, {
         scale: 1,
-        duration: 0.3,
+        duration: HOVER_ANIMATION_DURATION,
         ease: 'power2.out'
       });
     }
     if (colorShiftOnHover) {
       const overlay = element.querySelector('.color-overlay');
-      if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
+      if (overlay) gsap.to(overlay, { opacity: COLOR_OVERLAY_DEFAULT_OPACITY, duration: HOVER_ANIMATION_DURATION });
     }
   };
 
   const containerHeight = useMemo(() => {
     if (grid.length === 0) return 0;
-    return Math.max(...grid.map(item => item.y + item.h)) + 16;
+    return Math.max(...grid.map(item => item.y + item.h)) + CONTAINER_BOTTOM_PADDING;
   }, [grid]);
 
   const { openGallery, openAlbum } = useGallery();

@@ -6,6 +6,21 @@ import { validateImageFiles } from '@/lib/imageStore';
 import { Upload, X, Image as ImageIcon, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
+
+// FILE SIZE CONVERSION
+// Bytes per kilobyte (for file size formatting)
+const BYTES_PER_KB = 1024;
+// File size unit labels
+const FILE_SIZE_UNITS = ['Bytes', 'KB', 'MB', 'GB'];
+// Decimal places for file size display
+const FILE_SIZE_DECIMAL_PLACES = 2;
+
+// MODAL LAYOUT CONFIGURATION
+// Maximum modal height as viewport percentage
+const MODAL_MAX_HEIGHT_VH = 90;
+// Content area max height calculation offset (accounts for header/footer)
+const CONTENT_HEIGHT_OFFSET = 186;
+
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,9 +44,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const handleFiles = useCallback((files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const { valid, invalid } = validateImageFiles(fileArray);
-    
     setValidationErrors(invalid.length > 0 ? invalid : []);
-    
     if (valid.length === 0) return;
 
     const newPreviews: PreviewFile[] = valid.map(file => ({
@@ -57,7 +70,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
     }
@@ -81,15 +94,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 
   const handleUpload = async () => {
     if (previewFiles.length === 0) return;
-    
+
     const files = previewFiles.map(p => p.file);
     await addUploadedImages(files);
-    
+
     // Clean up previews
     previewFiles.forEach(p => URL.revokeObjectURL(p.preview));
     setPreviewFiles([]);
     setValidationErrors([]);
-    
+
     // Close modal on success
     if (!uploadError) {
       onClose();
@@ -105,11 +118,9 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    if (bytes === 0) return `0 ${FILE_SIZE_UNITS[0]}`;
+    const i = Math.floor(Math.log(bytes) / Math.log(BYTES_PER_KB));
+    return parseFloat((bytes / Math.pow(BYTES_PER_KB, i)).toFixed(FILE_SIZE_DECIMAL_PLACES)) + ' ' + FILE_SIZE_UNITS[i];
   };
 
   if (!isOpen) return null;
@@ -117,13 +128,13 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
+
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[${MODAL_MAX_HEIGHT_VH}vh] overflow-hidden`}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -144,15 +155,17 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-186px)]">
+        <div
+          className="p-6 overflow-y-auto"
+          style={{ maxHeight: `calc(${MODAL_MAX_HEIGHT_VH}vh - ${CONTENT_HEIGHT_OFFSET}px)` }}
+        >
           {/* Drag and Drop Zone */}
           {previewFiles.length === 0 && (
             <div
-              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
-                dragActive 
-                  ? 'border-blue-400 bg-blue-50' 
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragActive
+                  ? 'border-blue-400 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
-              }`}
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -230,7 +243,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                   Add More
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {previewFiles.map((preview) => (
                   <div key={preview.id} className="relative group">

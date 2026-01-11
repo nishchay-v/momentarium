@@ -5,7 +5,21 @@ import GalleryWrapper from '@/components/GalleryWrapper';
 import Breadcrumb from '@/components/Breadcrumb';
 import { useGallery } from '@/components/GalleryProvider';
 import { demoItems } from '@/lib/demoData';
-import { motion } from 'framer-motion';
+import { Easing, motion } from 'framer-motion';
+
+// ANIMATION CONFIGURATION
+// Header fade-in delay (seconds)
+const HEADER_FADE_DELAY = 0.5;
+// Header fade-in duration (seconds)
+const HEADER_FADE_DURATION = 0.6;
+// Breadcrumb slide-in duration (seconds)
+const BREADCRUMB_SLIDE_DURATION = 0.4;
+// Easing curve for header animations
+const HEADER_EASING: Easing = [0.22, 1, 0.36, 1];
+
+// CANVAS CONFIGURATION
+// Scale factor when hovering over items
+const HOVER_SCALE = 0.97;
 
 function DemoInfiniteCanvasView() {
   const { items: contextItems, currentAlbumName, navigateBack } = useGallery();
@@ -20,7 +34,7 @@ function DemoInfiniteCanvasView() {
         className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ delay: HEADER_FADE_DELAY, duration: HEADER_FADE_DURATION, ease: HEADER_EASING }}
       >
         <div className="flex items-center justify-between px-8 py-6">
           {/* Logo / Title */}
@@ -39,7 +53,7 @@ function DemoInfiniteCanvasView() {
               className="pointer-events-auto"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: BREADCRUMB_SLIDE_DURATION }}
             >
               <button
                 onClick={navigateBack}
@@ -66,7 +80,7 @@ function DemoInfiniteCanvasView() {
       <InfiniteCanvasWrapper
         items={displayItems}
         scaleOnHover={true}
-        hoverScale={0.97}
+        hoverScale={HOVER_SCALE}
       />
     </>
   );

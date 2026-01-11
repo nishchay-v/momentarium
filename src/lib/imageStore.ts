@@ -1,10 +1,26 @@
 import { MediaItem } from '@/components/GalleryProvider';
 
+// ID GENERATION CONFIGURATION
+// Prefix for uploaded image IDs
+const UPLOADED_ID_PREFIX = 'uploaded';
+// Base for random string generation (36 = alphanumeric)
+const RANDOM_BASE = 36;
+// Start position for random string (skips '0.')
+const RANDOM_START = 2;
+// Length of random string suffix
+const RANDOM_LENGTH = 9;
+
+// IMAGE DIMENSION CONFIGURATION
+// Standard width for masonry layout (px)
+const STANDARD_MASONRY_WIDTH = 600;
+// Maximum display height cap (px)
+const MAX_DISPLAY_HEIGHT = 1000;
+
 /**
  * Generate unique ID for uploaded images
  */
 export const generateImageId = (): string => {
-  return `uploaded-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${UPLOADED_ID_PREFIX}-${Date.now()}-${Math.random().toString(RANDOM_BASE).substr(RANDOM_START, RANDOM_LENGTH)}`;
 };
 
 /**
@@ -59,9 +75,8 @@ export const fileToMediaItem = async (file: File): Promise<MediaItem> => {
     const { width, height } = await getImageDimensions(file);
     
     // Calculate display height (maintain aspect ratio, scale to reasonable size)
-    const maxWidth = 600; // Standard width for masonry
     const aspectRatio = height / width;
-    const displayHeight = Math.min(maxWidth * aspectRatio, 1000); // Cap at 1000px height
+    const displayHeight = Math.min(STANDARD_MASONRY_WIDTH * aspectRatio, MAX_DISPLAY_HEIGHT);
     
     return {
       id: generateImageId(),

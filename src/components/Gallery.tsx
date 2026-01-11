@@ -6,16 +6,39 @@ import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { isImageCached } from '@/lib/imageCache';
 import { MediaItem } from './GalleryProvider';
 
+// ANIMATION CONFIGURATION
+// Gallery overlay fade-in duration
+const OVERLAY_FADE_IN_DURATION = 0.3;
+// Gallery overlay fade-out duration
+const OVERLAY_FADE_OUT_DURATION = 0.2;
+// Image fade-in duration for cached images (faster)
+const CACHED_IMAGE_FADE_DURATION = 0.15;
+// Image fade-in duration for uncached images
+const UNCACHED_IMAGE_FADE_DURATION = 0.25;
+// Initial image scale before fade-in
+const INITIAL_IMAGE_SCALE = 0.95;
+// Final image scale after fade-in
+const FINAL_IMAGE_SCALE = 1;
+
+// TOUCH INTERACTION CONFIGURATION
+// Minimum swipe distance (px) to trigger navigation
+const SWIPE_THRESHOLD = 50;
+
+// UI SIZES AND SPACING
+// Close button icon size
+const CLOSE_BUTTON_ICON_SIZE = 24;
+// Navigation button icon size
+const NAV_BUTTON_ICON_SIZE = 28;
+
 interface GalleryProps {
   items: MediaItem[];
   currentIndex: number;
   isOpen: boolean;
-  imagesPreloaded: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
 }
 
-const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavigate }: GalleryProps) => {
+const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,13 +94,13 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
       gsap.fromTo(
         overlayRef.current,
         { opacity: 0 },
-        { opacity: 1, duration: 0.3, ease: 'power2.out' }
+        { opacity: 1, duration: OVERLAY_FADE_IN_DURATION, ease: 'power2.out' }
       );
     } else {
       document.body.style.overflow = 'unset';
       gsap.to(overlayRef.current, {
         opacity: 0,
-        duration: 0.2,
+        duration: OVERLAY_FADE_OUT_DURATION,
         ease: 'power2.out'
       });
     }
@@ -97,12 +120,12 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
     if (!imageRef.current || loadedIndex !== currentIndex) return;
 
     // Faster animation for cached images
-    const duration = isCached ? 0.15 : 0.25;
+    const duration = isCached ? CACHED_IMAGE_FADE_DURATION : UNCACHED_IMAGE_FADE_DURATION;
     
     gsap.fromTo(
       imageRef.current,
-      { opacity: 0, scale: 0.95 },
-      { opacity: 1, scale: 1, duration, ease: 'power2.out' }
+      { opacity: 0, scale: INITIAL_IMAGE_SCALE },
+      { opacity: 1, scale: FINAL_IMAGE_SCALE, duration, ease: 'power2.out' }
     );
   }, [loadedIndex, currentIndex, isCached]);
 
@@ -124,8 +147,8 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const isLeftSwipe = distance > SWIPE_THRESHOLD;
+    const isRightSwipe = distance < -SWIPE_THRESHOLD;
 
     if (isLeftSwipe) {
       handleNext();
@@ -148,7 +171,7 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
         className="absolute top-4 right-4 z-10 p-2 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
         aria-label="Close gallery"
       >
-        <X size={24} />
+        <X size={CLOSE_BUTTON_ICON_SIZE} />
       </button>
 
       {/* Navigation buttons */}
@@ -162,7 +185,7 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
             className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
             aria-label="Previous image"
           >
-            <ChevronLeft size={28} />
+            <ChevronLeft size={NAV_BUTTON_ICON_SIZE} />
           </button>
           <button
             onClick={(e) => {
@@ -172,7 +195,7 @@ const Gallery = ({ items, currentIndex, isOpen, imagesPreloaded, onClose, onNavi
             className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
             aria-label="Next image"
           >
-            <ChevronRight size={28} />
+            <ChevronRight size={NAV_BUTTON_ICON_SIZE} />
           </button>
         </>
       )}

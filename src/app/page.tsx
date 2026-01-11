@@ -9,6 +9,14 @@ import { useState } from 'react';
 import { Upload, Image as ImageIcon, Plus } from 'lucide-react';
 import Link from 'next/link';
 
+// MASONRY ANIMATION CONFIGURATION
+// Animation duration for masonry items (seconds)
+const MASONRY_DURATION = 0.6;
+// Stagger delay between items (seconds)
+const MASONRY_STAGGER = 0.05;
+// Scale factor when hovering over masonry items
+const MASONRY_HOVER_SCALE = 0.95;
+
 function UploadMasonryView() {
   const { uploadedItems, items: contextItems, navigationStack } = useGallery();
   
@@ -21,11 +29,11 @@ function UploadMasonryView() {
       <Masonry
         items={displayItems}
         ease="power3.out"
-        duration={0.6}
-        stagger={0.05}
+        duration={MASONRY_DURATION}
+        stagger={MASONRY_STAGGER}
         animateFrom="bottom"
         scaleOnHover={true}
-        hoverScale={0.95}
+        hoverScale={MASONRY_HOVER_SCALE}
         blurToFocus={true}
         colorShiftOnHover={false}
       />
