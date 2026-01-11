@@ -1,4 +1,4 @@
-import { MediaItem } from '@/components/GalleryProvider';
+import { MediaItem } from "@/components/GalleryProvider";
 
 export const demoItems: MediaItem[] = [
   {
@@ -8,11 +8,36 @@ export const demoItems: MediaItem[] = [
     albumName: "Nature Collection",
     height: 450,
     albumItems: [
-      { id: "album-1-1", img: "https://picsum.photos/id/10/600/800", type: "image", height: 400 },
-      { id: "album-1-2", img: "https://picsum.photos/id/11/600/750", type: "image", height: 375 },
-      { id: "album-1-3", img: "https://picsum.photos/id/12/600/900", type: "image", height: 450 },
-      { id: "album-1-4", img: "https://picsum.photos/id/13/600/700", type: "image", height: 350 },
-      { id: "album-1-5", img: "https://picsum.photos/id/14/600/850", type: "image", height: 425 },
+      {
+        id: "album-1-1",
+        img: "https://picsum.photos/id/10/600/800",
+        type: "image",
+        height: 400,
+      },
+      {
+        id: "album-1-2",
+        img: "https://picsum.photos/id/11/600/750",
+        type: "image",
+        height: 375,
+      },
+      {
+        id: "album-1-3",
+        img: "https://picsum.photos/id/12/600/900",
+        type: "image",
+        height: 450,
+      },
+      {
+        id: "album-1-4",
+        img: "https://picsum.photos/id/13/600/700",
+        type: "image",
+        height: 350,
+      },
+      {
+        id: "album-1-5",
+        img: "https://picsum.photos/id/14/600/850",
+        type: "image",
+        height: 425,
+      },
     ],
   },
   {
@@ -34,10 +59,30 @@ export const demoItems: MediaItem[] = [
     albumName: "Urban Scenes",
     height: 400,
     albumItems: [
-      { id: "album-2-1", img: "https://picsum.photos/id/20/600/800", type: "image", height: 400 },
-      { id: "album-2-2", img: "https://picsum.photos/id/21/600/750", type: "image", height: 375 },
-      { id: "album-2-3", img: "https://picsum.photos/id/22/600/900", type: "image", height: 450 },
-      { id: "album-2-4", img: "https://picsum.photos/id/26/600/650", type: "image", height: 325 },
+      {
+        id: "album-2-1",
+        img: "https://picsum.photos/id/20/600/800",
+        type: "image",
+        height: 400,
+      },
+      {
+        id: "album-2-2",
+        img: "https://picsum.photos/id/21/600/750",
+        type: "image",
+        height: 375,
+      },
+      {
+        id: "album-2-3",
+        img: "https://picsum.photos/id/22/600/900",
+        type: "image",
+        height: 450,
+      },
+      {
+        id: "album-2-4",
+        img: "https://picsum.photos/id/26/600/650",
+        type: "image",
+        height: 325,
+      },
     ],
   },
   {
@@ -89,9 +134,24 @@ export const demoItems: MediaItem[] = [
     albumName: "Landscapes",
     height: 425,
     albumItems: [
-      { id: "album-3-1", img: "https://picsum.photos/id/28/600/800", type: "image", height: 400 },
-      { id: "album-3-2", img: "https://picsum.photos/id/29/600/900", type: "image", height: 450 },
-      { id: "album-3-3", img: "https://picsum.photos/id/30/600/750", type: "image", height: 375 },
+      {
+        id: "album-3-1",
+        img: "https://picsum.photos/id/28/600/800",
+        type: "image",
+        height: 400,
+      },
+      {
+        id: "album-3-2",
+        img: "https://picsum.photos/id/29/600/900",
+        type: "image",
+        height: 450,
+      },
+      {
+        id: "album-3-3",
+        img: "https://picsum.photos/id/30/600/750",
+        type: "image",
+        height: 375,
+      },
     ],
   },
   {

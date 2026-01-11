@@ -1,17 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback } from 'react';
-import { useGallery } from './GalleryProvider';
-import { validateImageFiles } from '@/lib/imageStore';
-import { Upload, X, Image as ImageIcon, AlertCircle, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
-
+import { useState, useRef, useCallback } from "react";
+import { useGallery } from "./GalleryProvider";
+import { validateImageFiles } from "@/lib/imageStore";
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
+import Link from "next/link";
 
 // FILE SIZE CONVERSION
 // Bytes per kilobyte (for file size formatting)
 const BYTES_PER_KB = 1024;
 // File size unit labels
-const FILE_SIZE_UNITS = ['Bytes', 'KB', 'MB', 'GB'];
+const FILE_SIZE_UNITS = ["Bytes", "KB", "MB", "GB"];
 // Decimal places for file size display
 const FILE_SIZE_DECIMAL_PLACES = 2;
 
@@ -39,7 +44,8 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const generatePreviewId = () => `preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const generatePreviewId = () =>
+    `preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const handleFiles = useCallback((files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -47,34 +53,37 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     setValidationErrors(invalid.length > 0 ? invalid : []);
     if (valid.length === 0) return;
 
-    const newPreviews: PreviewFile[] = valid.map(file => ({
+    const newPreviews: PreviewFile[] = valid.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       id: generatePreviewId(),
     }));
 
-    setPreviewFiles(prev => [...prev, ...newPreviews]);
+    setPreviewFiles((prev) => [...prev, ...newPreviews]);
   }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files);
-    }
-  }, [handleFiles]);
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFiles(e.dataTransfer.files);
+      }
+    },
+    [handleFiles],
+  );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -83,23 +92,23 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   };
 
   const removePreview = (id: string) => {
-    setPreviewFiles(prev => {
-      const fileToRemove = prev.find(p => p.id === id);
+    setPreviewFiles((prev) => {
+      const fileToRemove = prev.find((p) => p.id === id);
       if (fileToRemove) {
         URL.revokeObjectURL(fileToRemove.preview);
       }
-      return prev.filter(p => p.id !== id);
+      return prev.filter((p) => p.id !== id);
     });
   };
 
   const handleUpload = async () => {
     if (previewFiles.length === 0) return;
 
-    const files = previewFiles.map(p => p.file);
+    const files = previewFiles.map((p) => p.file);
     await addUploadedImages(files);
 
     // Clean up previews
-    previewFiles.forEach(p => URL.revokeObjectURL(p.preview));
+    previewFiles.forEach((p) => URL.revokeObjectURL(p.preview));
     setPreviewFiles([]);
     setValidationErrors([]);
 
@@ -111,7 +120,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 
   const handleClose = () => {
     // Clean up previews
-    previewFiles.forEach(p => URL.revokeObjectURL(p.preview));
+    previewFiles.forEach((p) => URL.revokeObjectURL(p.preview));
     setPreviewFiles([]);
     setValidationErrors([]);
     onClose();
@@ -120,7 +129,13 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return `0 ${FILE_SIZE_UNITS[0]}`;
     const i = Math.floor(Math.log(bytes) / Math.log(BYTES_PER_KB));
-    return parseFloat((bytes / Math.pow(BYTES_PER_KB, i)).toFixed(FILE_SIZE_DECIMAL_PLACES)) + ' ' + FILE_SIZE_UNITS[i];
+    return (
+      parseFloat(
+        (bytes / Math.pow(BYTES_PER_KB, i)).toFixed(FILE_SIZE_DECIMAL_PLACES),
+      ) +
+      " " +
+      FILE_SIZE_UNITS[i]
+    );
   };
 
   if (!isOpen) return null;
@@ -134,7 +149,9 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       />
 
       {/* Modal */}
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[${MODAL_MAX_HEIGHT_VH}vh] overflow-hidden`}>
+      <div
+        className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[${MODAL_MAX_HEIGHT_VH}vh] overflow-hidden`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -142,8 +159,12 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
               <Upload className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Upload Images</h2>
-              <p className="text-sm text-gray-500">Add images to your gallery</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Upload Images
+              </h2>
+              <p className="text-sm text-gray-500">
+                Add images to your gallery
+              </p>
             </div>
           </div>
           <button
@@ -157,15 +178,18 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         {/* Content */}
         <div
           className="p-6 overflow-y-auto"
-          style={{ maxHeight: `calc(${MODAL_MAX_HEIGHT_VH}vh - ${CONTENT_HEIGHT_OFFSET}px)` }}
+          style={{
+            maxHeight: `calc(${MODAL_MAX_HEIGHT_VH}vh - ${CONTENT_HEIGHT_OFFSET}px)`,
+          }}
         >
           {/* Drag and Drop Zone */}
           {previewFiles.length === 0 && (
             <div
-              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragActive
-                  ? 'border-blue-400 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
-                }`}
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+                dragActive
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -279,8 +303,12 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">Want to see the gallery in action?</p>
-                <p className="text-xs text-gray-500">Check out our demo with sample images</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Want to see the gallery in action?
+                </p>
+                <p className="text-xs text-gray-500">
+                  Check out our demo with sample images
+                </p>
               </div>
               <Link
                 href="/demo"
@@ -298,7 +326,8 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           <div className="text-sm text-gray-500">
             {previewFiles.length > 0 && (
               <span>
-                {previewFiles.length} file{previewFiles.length !== 1 ? 's' : ''} selected
+                {previewFiles.length} file{previewFiles.length !== 1 ? "s" : ""}{" "}
+                selected
               </span>
             )}
           </div>
@@ -334,5 +363,3 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 };
 
 export default UploadModal;
-
-

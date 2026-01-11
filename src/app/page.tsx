@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import Masonry from '@/components/MasonryWrapper';
-import GalleryWrapper from '@/components/GalleryWrapper';
-import Breadcrumb from '@/components/Breadcrumb';
-import UploadModal from '@/components/UploadModal';
-import { useGallery } from '@/components/GalleryProvider';
-import { useState } from 'react';
-import { Upload, Image as ImageIcon, Plus } from 'lucide-react';
-import Link from 'next/link';
+import Masonry from "@/components/MasonryWrapper";
+import GalleryWrapper from "@/components/GalleryWrapper";
+import Breadcrumb from "@/components/Breadcrumb";
+import UploadModal from "@/components/UploadModal";
+import { useGallery } from "@/components/GalleryProvider";
+import { useState } from "react";
+import { Upload, Image as ImageIcon, Plus } from "lucide-react";
+import Link from "next/link";
 
 // MASONRY ANIMATION CONFIGURATION
 // Animation duration for masonry items (seconds)
@@ -19,10 +19,11 @@ const MASONRY_HOVER_SCALE = 0.95;
 
 function UploadMasonryView() {
   const { uploadedItems, items: contextItems, navigationStack } = useGallery();
-  
+
   // Use context items if in album, otherwise use uploaded items
-  const displayItems = navigationStack.length > 0 ? contextItems : uploadedItems;
-  
+  const displayItems =
+    navigationStack.length > 0 ? contextItems : uploadedItems;
+
   return (
     <>
       <Breadcrumb />
@@ -51,7 +52,8 @@ function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
         Upload Your First Images
       </h2>
       <p className="text-gray-600 text-center mb-8 max-w-md">
-        Create your personal gallery by uploading images. You can organize them into albums and view them in fullscreen.
+        Create your personal gallery by uploading images. You can organize them
+        into albums and view them in fullscreen.
       </p>
       <div className="flex flex-col sm:flex-row gap-4">
         <button
@@ -83,12 +85,13 @@ function UploadPageContent() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Gallery</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              My Gallery
+            </h1>
             <p className="text-gray-600">
-              {uploadedItems.length > 0 
-                ? `${uploadedItems.length} image${uploadedItems.length !== 1 ? 's' : ''} in your gallery`
-                : 'Upload images to get started'
-              }
+              {uploadedItems.length > 0
+                ? `${uploadedItems.length} image${uploadedItems.length !== 1 ? "s" : ""} in your gallery`
+                : "Upload images to get started"}
             </p>
           </div>
           <button

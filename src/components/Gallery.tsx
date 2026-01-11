@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { gsap } from 'gsap';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { isImageCached } from '@/lib/imageCache';
-import { MediaItem } from './GalleryProvider';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { gsap } from "gsap";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { isImageCached } from "@/lib/imageCache";
+import { MediaItem } from "./GalleryProvider";
 
 // ANIMATION CONFIGURATION
 // Gallery overlay fade-in duration
@@ -38,7 +38,13 @@ interface GalleryProps {
   onNavigate: (index: number) => void;
 }
 
-const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryProps) => {
+const Gallery = ({
+  items,
+  currentIndex,
+  isOpen,
+  onClose,
+  onNavigate,
+}: GalleryProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,22 +73,22 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
-        case 'Escape':
+        case "Escape":
           onClose();
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
           handlePrevious();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
           handleNext();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, handlePrevious, handleNext]);
 
   // Animate gallery open/close
@@ -90,23 +96,23 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
     if (!overlayRef.current) return;
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
       gsap.fromTo(
         overlayRef.current,
         { opacity: 0 },
-        { opacity: 1, duration: OVERLAY_FADE_IN_DURATION, ease: 'power2.out' }
+        { opacity: 1, duration: OVERLAY_FADE_IN_DURATION, ease: "power2.out" },
       );
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
       gsap.to(overlayRef.current, {
         opacity: 0,
         duration: OVERLAY_FADE_OUT_DURATION,
-        ease: 'power2.out'
+        ease: "power2.out",
       });
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -120,12 +126,14 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
     if (!imageRef.current || loadedIndex !== currentIndex) return;
 
     // Faster animation for cached images
-    const duration = isCached ? CACHED_IMAGE_FADE_DURATION : UNCACHED_IMAGE_FADE_DURATION;
-    
+    const duration = isCached
+      ? CACHED_IMAGE_FADE_DURATION
+      : UNCACHED_IMAGE_FADE_DURATION;
+
     gsap.fromTo(
       imageRef.current,
       { opacity: 0, scale: INITIAL_IMAGE_SCALE },
-      { opacity: 1, scale: FINAL_IMAGE_SCALE, duration, ease: 'power2.out' }
+      { opacity: 1, scale: FINAL_IMAGE_SCALE, duration, ease: "power2.out" },
     );
   }, [loadedIndex, currentIndex, isCached]);
 
@@ -145,7 +153,7 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > SWIPE_THRESHOLD;
     const isRightSwipe = distance < -SWIPE_THRESHOLD;
@@ -248,8 +256,8 @@ const Gallery = ({ items, currentIndex, isOpen, onClose, onNavigate }: GalleryPr
               }}
               className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all duration-200 ${
                 index === currentIndex
-                  ? 'border-white scale-110'
-                  : 'border-white/30 hover:border-white/60'
+                  ? "border-white scale-110"
+                  : "border-white/30 hover:border-white/60"
               }`}
             >
               <img

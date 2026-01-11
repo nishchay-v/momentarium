@@ -33,6 +33,7 @@ getCacheSize(): number
 ```
 
 **Benefits:**
+
 - Shared across all components
 - Prevents duplicate loads
 - Promise-based for async operations
@@ -42,6 +43,7 @@ getCacheSize(): number
 Central state management with smart preloading.
 
 **State:**
+
 ```typescript
 {
   items: MediaItem[]           // Current items
@@ -54,6 +56,7 @@ Central state management with smart preloading.
 ```
 
 **Preload Strategy:**
+
 1. Current image (synchronous, before opening - INSTANT!)
 2. Adjacent ±2 images (parallel, on open)
 3. Remaining images (delayed 100ms, background)
@@ -64,13 +67,14 @@ Central state management with smart preloading.
 Responsive grid with animated positioning.
 
 **Layout Algorithm:**
+
 ```javascript
 // Calculate column positions
 const colHeights = new Array(columns).fill(0);
 const gap = 16;
 const columnWidth = (width - totalGaps) / columns;
 
-items.forEach(item => {
+items.forEach((item) => {
   const col = colHeights.indexOf(Math.min(...colHeights));
   const x = col * (columnWidth + gap);
   const y = colHeights[col];
@@ -79,8 +83,9 @@ items.forEach(item => {
 ```
 
 **Item Detection:**
+
 ```javascript
-if (item.type === 'album' && item.albumItems) {
+if (item.type === "album" && item.albumItems) {
   openAlbum(item.albumItems, item.albumName);
 } else {
   openGallery(items, index);
@@ -92,9 +97,10 @@ if (item.type === 'album' && item.albumItems) {
 Fullscreen viewer with smooth transitions.
 
 **Key Fix - No Flicker:**
+
 ```jsx
 <img
-  key={currentItem.id}  // Forces React remount
+  key={currentItem.id} // Forces React remount
   ref={imageRef}
   src={currentItem.img}
   style={{ opacity: 0 }} // Start invisible
@@ -103,14 +109,16 @@ Fullscreen viewer with smooth transitions.
 ```
 
 **Animation:**
+
 ```javascript
 useEffect(() => {
   if (loadedIndex !== currentIndex) return;
-  
+
   const duration = isCached ? 0.15 : 0.25;
-  gsap.fromTo(imageRef.current,
+  gsap.fromTo(
+    imageRef.current,
     { opacity: 0, scale: 0.95 },
-    { opacity: 1, scale: 1, duration }
+    { opacity: 1, scale: 1, duration },
   );
 }, [loadedIndex, currentIndex, isCached]);
 ```
@@ -124,7 +132,7 @@ if (navigationStack.length === 0) return null;
 
 return (
   <button onClick={navigateBack}>
-    Back to {navigationStack.length > 1 ? 'Previous Album' : 'Gallery'}
+    Back to {navigationStack.length > 1 ? "Previous Album" : "Gallery"}
   </button>
 );
 ```
@@ -180,10 +188,10 @@ Images are preloaded **BEFORE** state changes for instant display:
 const openGallery = async (items, startIndex) => {
   // Wait for current image to load before opening
   await preloadImages([items[startIndex].img]);
-  
+
   setIsOpen(true); // Now open with image ready!
   setImagesPreloaded(true);
-  
+
   // Preload adjacent immediately
   preloadImages(adjacentImages);
 };
@@ -192,7 +200,7 @@ const openGallery = async (items, startIndex) => {
 const navigateToIndex = async (index) => {
   // Wait for next image to load before changing
   await preloadImages([items[index].img]);
-  
+
   setCurrentIndex(index); // Change with image ready!
 };
 ```
@@ -208,15 +216,15 @@ const isCached = isImageCached(currentItem.img);
 const duration = isCached ? 0.15 : 0.25;
 
 // Skip loading spinner for cached
-{!isCached && loadedIndex !== currentIndex && (
-  <div>Loading...</div>
-)}
+{
+  !isCached && loadedIndex !== currentIndex && <div>Loading...</div>;
+}
 ```
 
 ### 3. GSAP Animation Performance
 
 ```jsx
-style={{ 
+style={{
   willChange: 'transform, width, height, opacity',
   backfaceVisibility: 'hidden'
 }}
@@ -230,9 +238,9 @@ style={{
 // Provider
 export const GalleryProvider = ({ children }) => {
   const [state, setState] = useState(...);
-  
+
   const value = { state, actions };
-  
+
   return (
     <GalleryContext.Provider value={value}>
       {children}
@@ -266,10 +274,10 @@ setItems(previousItems);
 
 ```javascript
 const handleItemClick = (item) => {
-  if (item.type === 'album' && item.albumItems) {
-    openAlbum(item.albumItems, item.albumName || 'Album');
+  if (item.type === "album" && item.albumItems) {
+    openAlbum(item.albumItems, item.albumName || "Album");
   } else {
-    const index = items.findIndex(i => i.id === item.id);
+    const index = items.findIndex((i) => i.id === item.id);
     openGallery(items, index);
   }
 };
@@ -286,7 +294,7 @@ useEffect(() => {
       case 'ArrowRight': handleNext(); break;
     }
   };
-  
+
   document.addEventListener('keydown', handleKeyDown);
   return () => document.removeEventListener('keydown', handleKeyDown);
 }, [isOpen]);
@@ -315,7 +323,7 @@ export interface MediaItem {
   img: string;
   url?: string;
   height: number;
-  type?: 'image' | 'album';
+  type?: "image" | "album";
   albumItems?: MediaItem[];
   albumName?: string;
 }
@@ -402,7 +410,7 @@ export const preloadImage = async (url: string) => {
 
 ```javascript
 useEffect(() => {
-  console.log('[Gallery State]', {
+  console.log("[Gallery State]", {
     itemCount: items.length,
     currentIndex,
     isOpen,
@@ -417,31 +425,39 @@ useEffect(() => {
 // Measure preload time
 const start = performance.now();
 await preloadImages(urls);
-console.log(`Preloaded ${urls.length} images in ${performance.now() - start}ms`);
+console.log(
+  `Preloaded ${urls.length} images in ${performance.now() - start}ms`,
+);
 ```
 
 ## Common Issues
 
 ### Issue: Gallery flickers on navigation
+
 **Solution:** Ensure `key={currentItem.id}` is on the img element
 
 ### Issue: Albums don't open
+
 **Solution:** Check that `type: "album"` is set and `albumItems` exists
 
 ### Issue: Back button doesn't show
+
 **Solution:** Breadcrumb only renders when `navigationStack.length > 0`
 
 ### Issue: Images load slowly
+
 **Solution:** Check network throttling and cache status with `isImageCached()`
 
 ### Issue: Images appear stacked on the left during initial load (Fixed in v1.1)
+
 **Problem:** Masonry items were rendering with default positioning before GSAP animations applied proper grid positions.
 
 **Root Cause:** Race condition between container width measurement and grid calculation causing elements to render at `left: 0, top: 0`.
 
 **Solution:** Set initial positions immediately in CSS instead of waiting for GSAP:
+
 ```jsx
-style={{ 
+style={{
   willChange: 'transform, width, height, opacity',
   transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
   width: `${item.w}px`,
@@ -451,6 +467,7 @@ style={{
 ```
 
 ### Issue: Photos disappearing when returning from photo viewer in albums (Fixed in v1.1)
+
 **Problem:** When users opened a photo from an album and closed the viewer, they would be taken out of the album context.
 
 **Root Cause 1:** Demo page was using `navigationStack.length > 0` to determine item display, but this remained true after gallery closed while `contextItems` got cleared.
@@ -458,16 +475,20 @@ style={{
 **Root Cause 2:** `closeGallery()` was clearing all items regardless of album context.
 
 **Solutions:**
+
 1. **Updated item selection logic** in demo page:
+
 ```tsx
 // Before: Used navigationStack presence
 const displayItems = navigationStack.length > 0 ? contextItems : demoItems;
 
-// After: Use album context and item validity  
-const displayItems = currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
+// After: Use album context and item validity
+const displayItems =
+  currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
 ```
 
 2. **Conditional item clearing** in `closeGallery()`:
+
 ```tsx
 setTimeout(() => {
   if (!currentAlbumName) {
@@ -494,4 +515,3 @@ setTimeout(() => {
 - Video support
 - Progressive image loading
 - Image optimization pipeline
-

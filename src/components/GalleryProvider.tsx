@@ -1,7 +1,13 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { preloadImages } from '@/lib/imageCache';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { preloadImages } from "@/lib/imageCache";
 
 // IMAGE PRELOADING CONFIGURATION
 // Number of images to preload on each side of current image
@@ -16,7 +22,7 @@ export interface MediaItem {
   img: string;
   url?: string;
   height: number;
-  type?: 'image' | 'album';
+  type?: "image" | "album";
   albumItems?: MediaItem[];
   albumName?: string;
   // Upload-specific properties
@@ -52,7 +58,7 @@ const GalleryContext = createContext<GalleryContextType | undefined>(undefined);
 export const useGallery = () => {
   const context = useContext(GalleryContext);
   if (!context) {
-    throw new Error('useGallery must be used within a GalleryProvider');
+    throw new Error("useGallery must be used within a GalleryProvider");
   }
   return context;
 };
@@ -68,7 +74,7 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   const [imagesPreloaded, setImagesPreloaded] = useState(false);
   const [navigationStack, setNavigationStack] = useState<MediaItem[][]>([]);
   const [currentAlbumName, setCurrentAlbumName] = useState<string | null>(null);
-  
+
   // Upload state
   const [uploadedItems, setUploadedItems] = useState<MediaItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -81,7 +87,7 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
         .filter((item, index) => {
           const distance = Math.min(
             Math.abs(index - currentIndex),
-            items.length - Math.abs(index - currentIndex)
+            items.length - Math.abs(index - currentIndex),
           );
           return distance > PRELOAD_RANGE;
         })
@@ -119,23 +125,24 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     if (currentImg) {
       await preloadImages([currentImg]);
     }
-    
+
     setItems(galleryItems);
     setCurrentIndex(startIndex);
     setIsOpen(true);
     setImagesPreloaded(true);
-    
+
     // Preload adjacent images immediately in background
     const adjacentUrls: string[] = [];
-    
+
     for (let i = -PRELOAD_RANGE; i <= PRELOAD_RANGE; i++) {
       if (i === 0) continue;
-      const index = (startIndex + i + galleryItems.length) % galleryItems.length;
+      const index =
+        (startIndex + i + galleryItems.length) % galleryItems.length;
       if (galleryItems[index]?.img) {
         adjacentUrls.push(galleryItems[index].img);
       }
     }
-    
+
     if (adjacentUrls.length > 0) {
       preloadImages(adjacentUrls);
     }
@@ -165,7 +172,7 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     if (nextImg) {
       await preloadImages([nextImg]);
     }
-    
+
     setCurrentIndex(index);
     setImagesPreloaded(true);
   };
@@ -191,21 +198,23 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   const addUploadedImages = async (files: File[]) => {
     setIsUploading(true);
     setUploadError(null);
-    
+
     try {
-      const { filesToMediaItems } = await import('@/lib/imageStore');
+      const { filesToMediaItems } = await import("@/lib/imageStore");
       const newMediaItems = await filesToMediaItems(files);
-      setUploadedItems(prev => [...prev, ...newMediaItems]);
+      setUploadedItems((prev) => [...prev, ...newMediaItems]);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload images');
-      console.error('Upload error:', error);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to upload images",
+      );
+      console.error("Upload error:", error);
     } finally {
       setIsUploading(false);
     }
   };
 
   const deleteUploadedImage = (id: string) => {
-    setUploadedItems(prev => prev.filter(item => item.id !== id));
+    setUploadedItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const clearUploadedImages = () => {
@@ -236,8 +245,6 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   };
 
   return (
-    <GalleryContext.Provider value={value}>
-      {children}
-    </GalleryContext.Provider>
+    <GalleryContext.Provider value={value}>{children}</GalleryContext.Provider>
   );
 };

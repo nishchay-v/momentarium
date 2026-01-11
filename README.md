@@ -9,14 +9,14 @@ A high-performance, animated masonry gallery with nested album support.
 ✅ **Album Support** - Nested collections with breadcrumb navigation  
 ✅ **Smart Image Caching** - Preload current and adjacent images  
 ✅ **Smooth Animations** - GSAP-powered transitions  
-✅ **Type-Safe** - Full TypeScript support  
+✅ **Type-Safe** - Full TypeScript support
 
 ## Quick Start
 
 ```jsx
-import Masonry from '@/components/MasonryWrapper';
-import GalleryWrapper from '@/components/GalleryWrapper';
-import Breadcrumb from '@/components/Breadcrumb';
+import Masonry from "@/components/MasonryWrapper";
+import GalleryWrapper from "@/components/GalleryWrapper";
+import Breadcrumb from "@/components/Breadcrumb";
 
 const items = [
   // Album
@@ -56,51 +56,56 @@ export default function Page() {
 
 ```typescript
 interface MediaItem {
-  id: string;              // Unique identifier
-  img: string;             // Image URL
-  type?: 'image' | 'album'; // Content type
-  height: number;          // For masonry layout
-  
+  id: string; // Unique identifier
+  img: string; // Image URL
+  type?: "image" | "album"; // Content type
+  height: number; // For masonry layout
+
   // Album-specific
-  albumName?: string;      // Album title
+  albumName?: string; // Album title
   albumItems?: MediaItem[]; // Nested items
-  
+
   // Optional
-  url?: string;            // External link
+  url?: string; // External link
 }
 ```
 
 ## Components
 
 ### Masonry
+
 Responsive grid layout with animations.
 
 ```jsx
 <Masonry
-  items={items}                  // MediaItem[]
-  ease="power3.out"              // GSAP easing
-  duration={0.6}                 // Animation duration
-  stagger={0.05}                 // Delay between items
-  animateFrom="bottom"           // Entry animation
-  scaleOnHover={true}            // Hover effect
-  hoverScale={0.95}              // Scale amount
-  blurToFocus={true}             // Blur animation
-  colorShiftOnHover={false}      // Color overlay
+  items={items} // MediaItem[]
+  ease="power3.out" // GSAP easing
+  duration={0.6} // Animation duration
+  stagger={0.05} // Delay between items
+  animateFrom="bottom" // Entry animation
+  scaleOnHover={true} // Hover effect
+  hoverScale={0.95} // Scale amount
+  blurToFocus={true} // Blur animation
+  colorShiftOnHover={false} // Color overlay
 />
 ```
 
 ### Gallery
+
 Fullscreen image viewer.
 
 **Keyboard Shortcuts:**
+
 - `←` / `→` - Navigate
 - `Esc` - Close
 
 **Mobile:**
+
 - Swipe left/right to navigate
 - Tap background to close
 
 ### Breadcrumb
+
 Navigation for albums. Automatically shows when inside an album.
 
 ## API
@@ -109,30 +114,30 @@ Navigation for albums. Automatically shows when inside an album.
 
 ```typescript
 const {
-  items,              // Current MediaItem[]
-  currentIndex,       // Active item index
-  isOpen,             // Gallery open state
-  imagesPreloaded,    // Current image loaded
-  navigationStack,    // Album navigation history
-  currentAlbumName,   // Current album name
-  openGallery,        // (items, index) => void
-  closeGallery,       // () => void
-  navigateToIndex,    // (index) => void
-  openAlbum,          // (items, name) => void
-  navigateBack,       // () => void
+  items, // Current MediaItem[]
+  currentIndex, // Active item index
+  isOpen, // Gallery open state
+  imagesPreloaded, // Current image loaded
+  navigationStack, // Album navigation history
+  currentAlbumName, // Current album name
+  openGallery, // (items, index) => void
+  closeGallery, // () => void
+  navigateToIndex, // (index) => void
+  openAlbum, // (items, name) => void
+  navigateBack, // () => void
 } = useGallery();
 ```
 
 ### Image Cache
 
 ```typescript
-import { preloadImages, isImageCached } from '@/lib/imageCache';
+import { preloadImages, isImageCached } from "@/lib/imageCache";
 
 // Preload images
-await preloadImages(['url1.jpg', 'url2.jpg']);
+await preloadImages(["url1.jpg", "url2.jpg"]);
 
 // Check if cached
-if (isImageCached('url1.jpg')) {
+if (isImageCached("url1.jpg")) {
   // Image is ready
 }
 ```
@@ -195,16 +200,16 @@ src/
 ### Programmatic Control
 
 ```jsx
-import { useGallery } from '@/components/GalleryProvider';
+import { useGallery } from "@/components/GalleryProvider";
 
 function MyComponent() {
   const { openGallery, openAlbum } = useGallery();
-  
+
   // Open gallery
   const handleImage = () => {
     openGallery(items, 0);
   };
-  
+
   // Open album
   const handleAlbum = () => {
     openAlbum(albumItems, "My Album");
@@ -242,9 +247,7 @@ const items = [
     type: "album",
     albumName: "Work Events",
     height: 350,
-    albumItems: [
-      { id: "w1", img: "meeting.jpg", type: "image", height: 300 },
-    ],
+    albumItems: [{ id: "w1", img: "meeting.jpg", type: "image", height: 300 }],
   },
 ];
 ```
@@ -252,15 +255,18 @@ const items = [
 ## Troubleshooting
 
 ### Images not loading?
+
 - Check network tab for errors
 - Verify image URLs are accessible
 - Check CORS headers
 
 ### Gallery flickers?
+
 - Should be fixed with `key={currentItem.id}`
 - Check browser console for errors
 
 ### Albums not opening?
+
 - Ensure `type: "album"` is set
 - Verify `albumItems` array exists
 - Check `openAlbum` is imported

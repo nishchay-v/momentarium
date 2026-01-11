@@ -1,15 +1,22 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { GalleryProvider, useGallery } from './GalleryProvider';
-import Gallery from './Gallery';
+import { ReactNode } from "react";
+import { GalleryProvider, useGallery } from "./GalleryProvider";
+import Gallery from "./Gallery";
 
 interface GalleryWrapperProps {
   children: ReactNode;
 }
 
 const GalleryContent = ({ children }: GalleryWrapperProps) => {
-  const { items, currentIndex, isOpen, imagesPreloaded, closeGallery, navigateToIndex } = useGallery();
+  const {
+    items,
+    currentIndex,
+    isOpen,
+    imagesPreloaded,
+    closeGallery,
+    navigateToIndex,
+  } = useGallery();
 
   return (
     <>

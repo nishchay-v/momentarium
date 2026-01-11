@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { useGallery } from './GalleryProvider';
-import { preloadImages } from '@/lib/imageCache';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { useGallery } from "./GalleryProvider";
+import { preloadImages } from "@/lib/imageCache";
 
 // RESPONSIVE BREAKPOINTS AND COLUMNS
 // Breakpoint widths for responsive column layout (px)
@@ -55,14 +55,18 @@ const HORIZONTAL_OFFSET = 200;
 const DEFAULT_OFFSET = 100;
 
 const useMedia = (queries, values, defaultValue) => {
-  const get = () => values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue;
+  const get = () =>
+    values[queries.findIndex((q) => matchMedia(q).matches)] ?? defaultValue;
 
   const [value, setValue] = useState(get);
 
   useEffect(() => {
     const handler = () => setValue(get);
-    queries.forEach(q => matchMedia(q).addEventListener('change', handler));
-    return () => queries.forEach(q => matchMedia(q).removeEventListener('change', handler));
+    queries.forEach((q) => matchMedia(q).addEventListener("change", handler));
+    return () =>
+      queries.forEach((q) =>
+        matchMedia(q).removeEventListener("change", handler),
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queries]);
 
@@ -88,52 +92,52 @@ const useMeasure = () => {
 
 const Masonry = ({
   items,
-  ease = 'power3.out',
+  ease = "power3.out",
   duration = 0.6,
   stagger = 0.05,
-  animateFrom = 'bottom',
+  animateFrom = "bottom",
   scaleOnHover = true,
   hoverScale = 0.95,
   blurToFocus = true,
-  colorShiftOnHover = false
+  colorShiftOnHover = false,
 }) => {
   const columns = useMedia(
     [
       `(min-width:${BREAKPOINT_XL}px)`,
       `(min-width:${BREAKPOINT_LG}px)`,
       `(min-width:${BREAKPOINT_MD}px)`,
-      `(min-width:${BREAKPOINT_SM}px)`
+      `(min-width:${BREAKPOINT_SM}px)`,
     ],
     [COLUMNS_XL, COLUMNS_LG, COLUMNS_MD, COLUMNS_SM],
-    COLUMNS_XS
+    COLUMNS_XS,
   );
 
   const [containerRef, { width }] = useMeasure();
   const [imagesReady, setImagesReady] = useState(false);
 
-  const getInitialPosition = item => {
+  const getInitialPosition = (item) => {
     const containerRect = containerRef.current?.getBoundingClientRect();
     if (!containerRect) return { x: item.x, y: item.y };
 
     let direction = animateFrom;
-    if (animateFrom === 'random') {
-      const dirs = ['top', 'bottom', 'left', 'right'];
+    if (animateFrom === "random") {
+      const dirs = ["top", "bottom", "left", "right"];
       direction = dirs[Math.floor(Math.random() * dirs.length)];
     }
 
     switch (direction) {
-      case 'top':
+      case "top":
         return { x: item.x, y: -VERTICAL_OFFSET };
-      case 'bottom':
+      case "bottom":
         return { x: item.x, y: window.innerHeight + VERTICAL_OFFSET };
-      case 'left':
+      case "left":
         return { x: -HORIZONTAL_OFFSET, y: item.y };
-      case 'right':
+      case "right":
         return { x: window.innerWidth + HORIZONTAL_OFFSET, y: item.y };
-      case 'center':
+      case "center":
         return {
           x: containerRect.width / 2 - item.w / 2,
-          y: containerRect.height / 2 - item.h / 2
+          y: containerRect.height / 2 - item.h / 2,
         };
       default:
         return { x: item.x, y: item.y + DEFAULT_OFFSET };
@@ -141,7 +145,7 @@ const Masonry = ({
   };
 
   useEffect(() => {
-    const urls = items.map(i => i.img);
+    const urls = items.map((i) => i.img);
     preloadImages(urls).then(() => setImagesReady(true));
   }, [items]);
 
@@ -151,7 +155,7 @@ const Masonry = ({
     const totalGaps = (columns - 1) * GAP;
     const columnWidth = (width - totalGaps) / columns;
 
-    return items.map(child => {
+    return items.map((child) => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = col * (columnWidth + GAP);
       const height = child.height / HEIGHT_MULTIPLIER;
@@ -169,7 +173,7 @@ const Masonry = ({
 
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
-      
+
       if (!hasMounted.current) {
         const start = getInitialPosition(item);
         gsap.fromTo(
@@ -179,7 +183,7 @@ const Masonry = ({
             x: start.x,
             y: start.y,
             // Don't set width/height here since they're set in style
-            ...(blurToFocus && { filter: `blur(${INITIAL_BLUR}px)` })
+            ...(blurToFocus && { filter: `blur(${INITIAL_BLUR}px)` }),
           },
           {
             opacity: 1,
@@ -187,9 +191,9 @@ const Masonry = ({
             y: item.y,
             ...(blurToFocus && { filter: `blur(${FINAL_BLUR}px)` }),
             duration: INITIAL_ANIMATION_DURATION,
-            ease: 'power3.out',
-            delay: index * stagger
-          }
+            ease: "power3.out",
+            delay: index * stagger,
+          },
         );
       } else {
         gsap.to(selector, {
@@ -199,7 +203,7 @@ const Masonry = ({
           height: item.h,
           duration,
           ease,
-          overwrite: 'auto'
+          overwrite: "auto",
         });
       }
     });
@@ -213,12 +217,16 @@ const Masonry = ({
       gsap.to(`[data-key="${id}"]`, {
         scale: hoverScale,
         duration: HOVER_ANIMATION_DURATION,
-        ease: 'power2.out'
+        ease: "power2.out",
       });
     }
     if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay');
-      if (overlay) gsap.to(overlay, { opacity: COLOR_OVERLAY_HOVER_OPACITY, duration: HOVER_ANIMATION_DURATION });
+      const overlay = element.querySelector(".color-overlay");
+      if (overlay)
+        gsap.to(overlay, {
+          opacity: COLOR_OVERLAY_HOVER_OPACITY,
+          duration: HOVER_ANIMATION_DURATION,
+        });
     }
   };
 
@@ -227,51 +235,64 @@ const Masonry = ({
       gsap.to(`[data-key="${id}"]`, {
         scale: 1,
         duration: HOVER_ANIMATION_DURATION,
-        ease: 'power2.out'
+        ease: "power2.out",
       });
     }
     if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay');
-      if (overlay) gsap.to(overlay, { opacity: COLOR_OVERLAY_DEFAULT_OPACITY, duration: HOVER_ANIMATION_DURATION });
+      const overlay = element.querySelector(".color-overlay");
+      if (overlay)
+        gsap.to(overlay, {
+          opacity: COLOR_OVERLAY_DEFAULT_OPACITY,
+          duration: HOVER_ANIMATION_DURATION,
+        });
     }
   };
 
   const containerHeight = useMemo(() => {
     if (grid.length === 0) return 0;
-    return Math.max(...grid.map(item => item.y + item.h)) + CONTAINER_BOTTOM_PADDING;
+    return (
+      Math.max(...grid.map((item) => item.y + item.h)) +
+      CONTAINER_BOTTOM_PADDING
+    );
   }, [grid]);
 
   const { openGallery, openAlbum } = useGallery();
 
   const handleItemClick = (clickedItem) => {
-    if (clickedItem.type === 'album' && clickedItem.albumItems) {
+    if (clickedItem.type === "album" && clickedItem.albumItems) {
       // Open album in masonry view
-      openAlbum(clickedItem.albumItems, clickedItem.albumName || 'Album');
+      openAlbum(clickedItem.albumItems, clickedItem.albumName || "Album");
     } else {
       // Open gallery for images
-      const clickedIndex = items.findIndex(item => item.id === clickedItem.id);
+      const clickedIndex = items.findIndex(
+        (item) => item.id === clickedItem.id,
+      );
       openGallery(items, clickedIndex);
     }
   };
 
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height: `${containerHeight}px` }}>
-      {grid.map(item => (
+    <div
+      ref={containerRef}
+      className="relative w-full"
+      style={{ height: `${containerHeight}px` }}
+    >
+      {grid.map((item) => (
         <div
           key={item.id}
           data-key={item.id}
           className="absolute box-content cursor-pointer"
-          style={{ 
-            willChange: 'transform, width, height, opacity',
+          style={{
+            willChange: "transform, width, height, opacity",
             // Set initial positions immediately to prevent left-stacking
             transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
             width: `${item.w}px`,
             height: `${item.h}px`,
-            opacity: hasMounted.current ? 1 : 0 // Hide initially if not mounted
+            opacity: hasMounted.current ? 1 : 0, // Hide initially if not mounted
           }}
           onClick={() => handleItemClick(item)}
-          onMouseEnter={e => handleMouseEnter(item.id, e.currentTarget)}
-          onMouseLeave={e => handleMouseLeave(item.id, e.currentTarget)}
+          onMouseEnter={(e) => handleMouseEnter(item.id, e.currentTarget)}
+          onMouseLeave={(e) => handleMouseLeave(item.id, e.currentTarget)}
         >
           <div
             className="relative w-full h-full bg-cover bg-center shadow-[0px_10px_50px_-10px_rgba(0,0,0,0.2)] uppercase text-[10px] leading-[10px] transition-all duration-300"
@@ -281,9 +302,9 @@ const Masonry = ({
               <div className="color-overlay absolute inset-0 bg-gradient-to-tr from-pink-500/50 to-sky-500/50 opacity-0 pointer-events-none" />
             )}
             {/* Album indicator */}
-            {item.type === 'album' && (
+            {item.type === "album" && (
               <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
-                📁 {item.albumName || 'Album'} ({item.albumItems?.length || 0})
+                📁 {item.albumName || "Album"} ({item.albumItems?.length || 0})
               </div>
             )}
             {/* Hover overlay for better visual feedback */}

@@ -56,4 +56,3 @@ export const clearCache = (): void => {
 export const getCacheSize = (): number => {
   return cache.size;
 };
-

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useGallery } from './GalleryProvider';
-import { ChevronLeft } from 'lucide-react';
+import { useGallery } from "./GalleryProvider";
+import { ChevronLeft } from "lucide-react";
 
 const Breadcrumb = () => {
   const { navigationStack, currentAlbumName, navigateBack } = useGallery();
@@ -17,9 +17,11 @@ const Breadcrumb = () => {
         className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 hover:bg-black/10 rounded-lg transition-colors duration-200 text-sm font-medium"
       >
         <ChevronLeft size={16} />
-        <span>Back to {navigationStack.length > 1 ? 'Previous Album' : 'Gallery'}</span>
+        <span>
+          Back to {navigationStack.length > 1 ? "Previous Album" : "Gallery"}
+        </span>
       </button>
-      
+
       {currentAlbumName && (
         <div className="mt-2 text-2xl font-bold text-gray-800">
           {currentAlbumName}
@@ -30,4 +32,3 @@ const Breadcrumb = () => {
 };
 
 export default Breadcrumb;
-
