@@ -1,31 +1,72 @@
 'use client';
 
-import Masonry from '@/components/MasonryWrapper';
+import InfiniteCanvasWrapper from '@/components/InfiniteCanvasWrapper';
 import GalleryWrapper from '@/components/GalleryWrapper';
 import Breadcrumb from '@/components/Breadcrumb';
 import { useGallery } from '@/components/GalleryProvider';
 import { demoItems } from '@/lib/demoData';
+import { motion } from 'framer-motion';
 
-function DemoMasonryView() {
-  const { items: contextItems, currentAlbumName } = useGallery();
+function DemoInfiniteCanvasView() {
+  const { items: contextItems, currentAlbumName, navigateBack } = useGallery();
   
-  // Use context items if we're currently in an album context (not just if navigationStack exists)
-  // The key is checking if we're actually viewing album content, not just if we've navigated before
+  // Use context items if we're currently in an album context
   const displayItems = currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
   
   return (
     <>
-      <Breadcrumb />
-      <Masonry
+      {/* Header overlay - appears above the canvas */}
+      <motion.header 
+        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="flex items-center justify-between px-8 py-6">
+          {/* Logo / Title */}
+          <div className="pointer-events-auto">
+            <h1 className="text-xl font-light tracking-[0.3em] text-white/80 uppercase">
+              Momentarium
+            </h1>
+            <p className="text-xs text-white/40 tracking-[0.15em] uppercase mt-1">
+              Infinite Gallery
+            </p>
+          </div>
+
+          {/* Breadcrumb for album navigation */}
+          {currentAlbumName && (
+            <motion.div 
+              className="pointer-events-auto"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <button
+                onClick={navigateBack}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-full border border-white/10 transition-all duration-300"
+              >
+                <svg 
+                  className="w-4 h-4 text-white/60" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="text-white/70 text-sm tracking-wide">
+                  Back from <span className="text-white/90">{currentAlbumName}</span>
+                </span>
+              </button>
+            </motion.div>
+          )}
+        </div>
+      </motion.header>
+
+      {/* Main infinite canvas - full screen */}
+      <InfiniteCanvasWrapper
         items={displayItems}
-        ease="power3.out"
-        duration={0.6}
-        stagger={0.05}
-        animateFrom="bottom"
         scaleOnHover={true}
-        hoverScale={0.95}
-        blurToFocus={true}
-        colorShiftOnHover={false}
+        hoverScale={0.97}
       />
     </>
   );
@@ -34,19 +75,7 @@ function DemoMasonryView() {
 export default function DemoPage() {
   return (
     <GalleryWrapper>
-      <div className="font-sans min-h-screen p-8 pb-20 sm:p-20">
-        <main className="w-full max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Demo Gallery</h1>
-            <p className="text-gray-600">
-              Explore our gallery features with sample images and albums
-            </p>
-          </div>
-          <DemoMasonryView />
-        </main>
-      </div>
+      <DemoInfiniteCanvasView />
     </GalleryWrapper>
   );
 }
-
-
