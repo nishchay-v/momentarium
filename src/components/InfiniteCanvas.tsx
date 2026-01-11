@@ -52,11 +52,11 @@ const DEFAULT_COLUMNS = 4;
 
 // EDGE EFFECTS CONFIGURATION
 // Scale reduction factor as items approach edges (0-1)
-const EDGE_SCALE_FACTOR = 0.08;
+const EDGE_SCALE_FACTOR = 0.2;
 // Opacity reduction factor as items approach edges (0-1)
 const EDGE_OPACITY_FACTOR = 0.25;
 // Z-depth offset multiplier for edge effect (px)
-const EDGE_Z_OFFSET_MULTIPLIER = 50;
+const EDGE_Z_OFFSET_MULTIPLIER = 80;
 // Visibility buffer zone around viewport (px)
 const VISIBILITY_BUFFER = 100;
 
@@ -69,8 +69,6 @@ const HEIGHT_SCALE_FACTOR = 0.6;
 const MIN_ITEM_HEIGHT = 180;
 // Maximum item height (px)
 const MAX_ITEM_HEIGHT = 500;
-// Tile repeat buffer for infinite scrolling
-const TILE_REPEAT_BUFFER = 2;
 
 // ANIMATION CONFIGURATION
 // Initialization delay after images load (ms)
@@ -99,13 +97,10 @@ const CANVAS_FADE_EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const INSTRUCTION_OVERLAY_DELAY = 1.2;
 // Instruction overlay duration (seconds)
 const INSTRUCTION_OVERLAY_DURATION = 0.6;
-// Instruction overlay bottom offset (px)
-const INSTRUCTION_OVERLAY_BOTTOM = 8;
+
 // Pulse animation delays for instruction dots (seconds)
 const PULSE_DELAY_1 = 0.2;
 const PULSE_DELAY_2 = 0.4;
-
-// 3D PERSPECTIVE CONFIGURATION
 
 // Perspective depth for 3D transforms (px)
 const PERSPECTIVE_DEPTH = 1200;
@@ -220,14 +215,19 @@ const GridItemComponent = ({
     const currentScrollY = scrollY.get();
 
     // Calculate wrapped position using modulo for infinite scrolling
+    // The wrap function returns a value in [0, tileWidth) / [0, tileHeight)
     let wrappedX = wrap(item.x + currentScrollX, tileWidth);
     let wrappedY = wrap(item.y + currentScrollY, tileHeight);
 
-    // Shift to ensure items appear in viewport - handle negative positions
-    if (wrappedX > viewportWidth) wrappedX -= tileWidth;
-    if (wrappedY > viewportHeight) wrappedY -= tileHeight;
-    if (wrappedX + item.w < -item.w) wrappedX += tileWidth;
-    if (wrappedY + item.h < -item.h) wrappedY += tileHeight;
+    // Shift items to create seamless infinite scrolling
+    // We need items to appear both before and after the viewport
+    // Center the wrapped position so items tile correctly in both directions
+    if (wrappedX > viewportWidth + item.w) {
+      wrappedX -= tileWidth;
+    }
+    if (wrappedY > viewportHeight + item.h) {
+      wrappedY -= tileHeight;
+    }
 
     // Calculate edge effects for parallax/lens effect
     const edgeFactor = getEdgeFactor(
@@ -392,12 +392,13 @@ const InfiniteCanvas = ({
   }, [items]);
 
   // VIEWPORT SIZE TRACKING
+  // Use window dimensions directly for fixed inset-0 container
+  // This ensures we have correct dimensions on initial load before container mounts
   useLayoutEffect(() => {
     const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setViewportSize({ width: rect.width, height: rect.height });
-      }
+      // For fixed inset-0 container, use window dimensions directly
+      // This avoids the issue where containerRef isn't available during loading state
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     };
 
     updateSize();
@@ -407,6 +408,7 @@ const InfiniteCanvas = ({
 
   // GRID LAYOUT CALCULATION
   // Creates the "tile" that repeats infinitely in all directions
+  // Optimized to create minimal DOM elements - only enough to cover viewport + buffer
   const { grid, tileWidth, tileHeight } = useMemo(() => {
     if (!viewportSize.width || items.length === 0) {
       return { grid: [], tileWidth: 0, tileHeight: 0 };
@@ -444,24 +446,24 @@ const InfiniteCanvas = ({
     const tileH = Math.max(...colHeights) + GAP;
     const tileW = viewportSize.width;
 
-    // Calculate how many tile copies needed to fill viewport + buffer
-    // We need enough tiles so that when wrapping, there are no gaps
-    const repeatX = Math.ceil(viewportSize.width / tileW) + TILE_REPEAT_BUFFER;
-    const repeatY = Math.ceil(viewportSize.height / tileH) + TILE_REPEAT_BUFFER;
+    // Calculate minimal tile copies needed:
+    // - Horizontally: tileW equals viewportWidth, so we only need 1 copy (0 and -1 for wrap)
+    // - Vertically: need enough to cover viewport height with buffer
+    const repeatY = Math.max(1, Math.ceil(viewportSize.height / tileH));
 
     const expandedGrid: GridItem[] = [];
 
-    for (let rx = -1; rx <= repeatX; rx++) {
-      for (let ry = -1; ry <= repeatY; ry++) {
-        gridItems.forEach((item) => {
-          expandedGrid.push({
-            ...item,
-            id: `${item.id}-${rx}-${ry}`,
-            x: item.x + rx * tileW,
-            y: item.y + ry * tileH,
-          });
+    // Only create tiles for x = 0 (since tileW = viewportWidth, the wrap logic handles seamless scrolling)
+    // For Y, create just enough tiles to fill viewport + one buffer tile
+    for (let ry = 0; ry <= repeatY; ry++) {
+      gridItems.forEach((item) => {
+        expandedGrid.push({
+          ...item,
+          id: `${item.id}-0-${ry}`,
+          x: item.x,
+          y: item.y + ry * tileH,
         });
-      }
+      });
     }
 
     return {
