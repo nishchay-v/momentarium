@@ -13,7 +13,6 @@ const GalleryContent = ({ children }: GalleryWrapperProps) => {
     items,
     currentIndex,
     isOpen,
-    imagesPreloaded,
     closeGallery,
     navigateToIndex,
   } = useGallery();
@@ -25,7 +24,6 @@ const GalleryContent = ({ children }: GalleryWrapperProps) => {
         items={items}
         currentIndex={currentIndex}
         isOpen={isOpen}
-        imagesPreloaded={imagesPreloaded}
         onClose={closeGallery}
         onNavigate={navigateToIndex}
       />
