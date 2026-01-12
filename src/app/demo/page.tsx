@@ -17,6 +17,12 @@ const BREADCRUMB_SLIDE_DURATION = 0.4;
 // Easing curve for header animations
 const HEADER_EASING: Easing = [0.22, 1, 0.36, 1];
 
+// Initial Y offset for header (px)
+const HEADER_Y_OFFSET = -20;
+// Animate Y offset for header (px)
+const ANIMATE_HEADER_Y_OFFSET = 0;
+
+
 // CANVAS CONFIGURATION
 // Scale factor when hovering over items
 const HOVER_SCALE = 0.97;
@@ -33,8 +39,8 @@ function DemoInfiniteCanvasView() {
       {/* Header overlay - appears above the canvas */}
       <motion.header
         className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: HEADER_Y_OFFSET }}
+        animate={{ opacity: 1, y: ANIMATE_HEADER_Y_OFFSET }}
         transition={{
           delay: HEADER_FADE_DELAY,
           duration: HEADER_FADE_DURATION,
@@ -45,10 +51,10 @@ function DemoInfiniteCanvasView() {
           {/* Logo / Title */}
           <div className="pointer-events-auto">
             <h1 className="text-xl font-light tracking-[0.3em] text-white/80 uppercase">
-              Momentarium
+              Nishchay Vashistha
             </h1>
             <p className="text-xs text-white/40 tracking-[0.15em] uppercase mt-1">
-              Infinite Gallery
+              Photography
             </p>
           </div>
 

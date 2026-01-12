@@ -22,7 +22,7 @@ import { preloadImages } from "@/lib/imageCache";
 const SPRING_CONFIG = {
   stiffness: 200, // Lower = more elastic, rubbery
   damping: 100, // Lower = more bouncy
-  mass: 1, // Higher = heavier, more momentum
+  mass: 0.5, // Higher = heavier, more momentum
 };
 
 // Wheel sensitivity
@@ -49,6 +49,9 @@ const COLUMNS_MD = 3;
 const COLUMNS_SM = 2;
 // Default column count
 const DEFAULT_COLUMNS = 4;
+
+// Number of tile copies for infinite scrolling (2 = original + 1 copy for seamless wrap)
+const X_TILE_COPIES = 2;
 
 // EDGE EFFECTS CONFIGURATION
 // Scale reduction factor as items approach edges (0-1)
@@ -174,6 +177,20 @@ const useColumns = () => {
   }, []);
 
   return columns;
+};
+
+// TOUCH DEVICE DETECTION HOOK
+const useIsTouchDevice = () => {
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    const checkTouch = () => {
+      return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    };
+    setIsTouch(checkTouch());
+  }, []);
+
+  return isTouch;
 };
 
 // GRID ITEM COMPONENT
@@ -358,6 +375,7 @@ const InfiniteCanvas = ({
 }: InfiniteCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const columns = useColumns();
+  const isTouchDevice = useIsTouchDevice();
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [imagesReady, setImagesReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -447,28 +465,31 @@ const InfiniteCanvas = ({
     const tileW = viewportSize.width;
 
     // Calculate minimal tile copies needed:
-    // - Horizontally: tileW equals viewportWidth, so we only need 1 copy (0 and -1 for wrap)
+    // - Horizontally: need X_TILE_COPIES to enable seamless infinite scrolling
     // - Vertically: need enough to cover viewport height with buffer
     const repeatY = Math.max(1, Math.ceil(viewportSize.height / tileH));
 
     const expandedGrid: GridItem[] = [];
 
-    // Only create tiles for x = 0 (since tileW = viewportWidth, the wrap logic handles seamless scrolling)
-    // For Y, create just enough tiles to fill viewport + one buffer tile
-    for (let ry = 0; ry <= repeatY; ry++) {
-      gridItems.forEach((item) => {
-        expandedGrid.push({
-          ...item,
-          id: `${item.id}-0-${ry}`,
-          x: item.x,
-          y: item.y + ry * tileH,
+    // Create tiles for both X and Y to enable infinite scrolling in all directions
+    // X needs multiple copies since tileW = viewportWidth, we need overlap for seamless scrolling
+    // Y needs enough copies to cover viewport height plus buffer
+    for (let rx = 0; rx < X_TILE_COPIES; rx++) {
+      for (let ry = 0; ry <= repeatY; ry++) {
+        gridItems.forEach((item) => {
+          expandedGrid.push({
+            ...item,
+            id: `${item.id}-${rx}-${ry}`,
+            x: item.x + rx * tileW,
+            y: item.y + ry * tileH,
+          });
         });
-      });
+      }
     }
 
     return {
       grid: expandedGrid,
-      tileWidth: tileW,
+      tileWidth: tileW * X_TILE_COPIES, // Total width of all X copies for proper wrapping
       tileHeight: tileH,
     };
   }, [items, columns, viewportSize.width, viewportSize.height]);
@@ -587,9 +608,9 @@ const InfiniteCanvas = ({
   return (
     <motion.div
       ref={containerRef}
-      className="fixed inset-0 overflow-hidden cursor-grab active:cursor-grabbing"
+      className={`fixed inset-0 overflow-hidden ${isTouchDevice ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
-        touchAction: "none",
+        touchAction: isTouchDevice ? "none" : "auto",
         perspective: `${PERSPECTIVE_DEPTH}px`,
         perspectiveOrigin: "50% 50%",
         background: `
@@ -599,7 +620,7 @@ const InfiniteCanvas = ({
         `,
       }}
       onWheel={handleWheel}
-      drag
+      drag={isTouchDevice}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0}
       dragMomentum={false}
@@ -668,7 +689,9 @@ const InfiniteCanvas = ({
             />
           </div>
           <span className="text-white/50 text-xs tracking-[0.2em] uppercase font-light">
-            Drag to explore · Click to view
+            {isTouchDevice
+              ? "Drag to explore · Tap to view"
+              : "Scroll to explore · Click to view"}
           </span>
         </div>
       </motion.div>
