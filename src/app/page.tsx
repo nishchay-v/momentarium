@@ -1,129 +1,111 @@
 "use client";
 
-import Masonry from "@/components/MasonryWrapper";
+import InfiniteCanvasWrapper from "@/components/InfiniteCanvasWrapper";
 import GalleryWrapper from "@/components/GalleryWrapper";
-import Breadcrumb from "@/components/Breadcrumb";
-import UploadModal from "@/components/UploadModal";
 import { useGallery } from "@/components/GalleryProvider";
-import { useState } from "react";
-import { Upload, Image as ImageIcon, Plus } from "lucide-react";
-import Link from "next/link";
+import { demoItems } from "@/lib/demoData";
+import { Easing, motion } from "framer-motion";
 
-// MASONRY ANIMATION CONFIGURATION
-// Animation duration for masonry items (seconds)
-const MASONRY_DURATION = 0.6;
-// Stagger delay between items (seconds)
-const MASONRY_STAGGER = 0.05;
-// Scale factor when hovering over masonry items
-const MASONRY_HOVER_SCALE = 0.95;
+// ANIMATION CONFIGURATION
+// Header fade-in delay (seconds)
+const HEADER_FADE_DELAY = 0.5;
+// Header fade-in duration (seconds)
+const HEADER_FADE_DURATION = 0.6;
+// Breadcrumb slide-in duration (seconds)
+const BREADCRUMB_SLIDE_DURATION = 0.4;
+// Easing curve for header animations
+const HEADER_EASING: Easing = [0.22, 1, 0.36, 1];
 
-function UploadMasonryView() {
-  const { uploadedItems, items: contextItems, navigationStack } = useGallery();
+// Initial Y offset for header (px)
+const HEADER_Y_OFFSET = -20;
+// Animate Y offset for header (px)
+const ANIMATE_HEADER_Y_OFFSET = 0;
 
-  // Use context items if in album, otherwise use uploaded items
+
+// CANVAS CONFIGURATION
+// Scale factor when hovering over items
+const HOVER_SCALE = 0.97;
+
+function DemoInfiniteCanvasView() {
+  const { items: contextItems, currentAlbumName, navigateBack } = useGallery();
+
+  // Use context items if we're currently in an album context
   const displayItems =
-    navigationStack.length > 0 ? contextItems : uploadedItems;
+    currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
 
   return (
     <>
-      <Breadcrumb />
-      <Masonry
+      {/* Header overlay - appears above the canvas */}
+      <motion.header
+        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
+        initial={{ opacity: 0, y: HEADER_Y_OFFSET }}
+        animate={{ opacity: 1, y: ANIMATE_HEADER_Y_OFFSET }}
+        transition={{
+          delay: HEADER_FADE_DELAY,
+          duration: HEADER_FADE_DURATION,
+          ease: HEADER_EASING,
+        }}
+      >
+        <div className="flex items-center justify-between px-8 py-6">
+          {/* Logo / Title */}
+          <div className="pointer-events-auto">
+            <h1 className="text-xl font-normal tracking-[0.3em] text-white/80 uppercase">
+              NVSH
+            </h1>
+            <p className="text-xs text-white/40 tracking-[0.15em] uppercase mt-1">
+              Photography
+            </p>
+          </div>
+
+          {/* Breadcrumb for album navigation */}
+          {currentAlbumName && (
+            <motion.div
+              className="pointer-events-auto"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: BREADCRUMB_SLIDE_DURATION }}
+            >
+              <button
+                onClick={navigateBack}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-full border border-white/10 transition-all duration-300"
+              >
+                <svg
+                  className="w-4 h-4 text-white/60"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span className="text-white/70 text-sm tracking-wide">
+                  Back from{" "}
+                  <span className="text-white/90">{currentAlbumName}</span>
+                </span>
+              </button>
+            </motion.div>
+          )}
+        </div>
+      </motion.header>
+
+      {/* Main infinite canvas - full screen */}
+      <InfiniteCanvasWrapper
         items={displayItems}
-        ease="power3.out"
-        duration={MASONRY_DURATION}
-        stagger={MASONRY_STAGGER}
-        animateFrom="bottom"
         scaleOnHover={true}
-        hoverScale={MASONRY_HOVER_SCALE}
-        blurToFocus={true}
-        colorShiftOnHover={false}
+        hoverScale={HOVER_SCALE}
       />
     </>
   );
 }
 
-function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 px-8">
-      <div className="p-6 bg-gray-100 rounded-full mb-6">
-        <ImageIcon className="w-12 h-12 text-gray-400" />
-      </div>
-      <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-        Upload Your First Images
-      </h2>
-      <p className="text-gray-600 text-center mb-8 max-w-md">
-        Create your personal gallery by uploading images. You can organize them
-        into albums and view them in fullscreen.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={onUploadClick}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          <Upload className="w-5 h-5" />
-          Upload Images
-        </button>
-        <Link
-          href="/demo"
-          className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-        >
-          <ImageIcon className="w-5 h-5" />
-          View Demo Gallery
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function UploadPageContent() {
-  const { uploadedItems } = useGallery();
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  return (
-    <div className="font-sans min-h-screen p-8 pb-20 sm:p-20">
-      <main className="w-full max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              My Gallery
-            </h1>
-            <p className="text-gray-600">
-              {uploadedItems.length > 0
-                ? `${uploadedItems.length} image${uploadedItems.length !== 1 ? "s" : ""} in your gallery`
-                : "Upload images to get started"}
-            </p>
-          </div>
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Upload
-          </button>
-        </div>
-
-        {/* Content */}
-        {uploadedItems.length > 0 ? (
-          <UploadMasonryView />
-        ) : (
-          <EmptyState onUploadClick={() => setIsUploadModalOpen(true)} />
-        )}
-
-        {/* Upload Modal */}
-        <UploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-        />
-      </main>
-    </div>
-  );
-}
-
-export default function Home() {
+export default function DemoPage() {
   return (
     <GalleryWrapper>
-      <UploadPageContent />
+      <DemoInfiniteCanvasView />
     </GalleryWrapper>
   );
 }
