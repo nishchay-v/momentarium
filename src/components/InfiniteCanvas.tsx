@@ -18,103 +18,39 @@ import {
 import { useGallery, MediaItem } from "./GalleryProvider";
 import { preloadImages } from "@/lib/imageCache";
 
-// PHYSICS CONFIGURATION - "Weighty" Premium Feel
-const SPRING_CONFIG = {
-  stiffness: 200, // Lower = more elastic, rubbery
-  damping: 100, // Lower = more bouncy
-  mass: 0.5, // Higher = heavier, more momentum
-};
-
-// Wheel sensitivity
+// --- CONFIGURATION ---
+const SPRING_CONFIG = { stiffness: 200, damping: 100, mass: 0.5 };
 const WHEEL_SENSITIVITY = 1;
-
-// Gap between items
 const GAP = 20;
-
-// Drag threshold for click detection
 const DRAG_THRESHOLD = 8;
-
-// RESPONSIVE BREAKPOINTS AND COLUMNS
-// Breakpoint widths for responsive column layout (px)
-const BREAKPOINT_XXL = 1800;
-const BREAKPOINT_XL = 1400;
-const BREAKPOINT_LG = 1000;
-const BREAKPOINT_MD = 700;
-const BREAKPOINT_SM = 500;
-// Column counts for each breakpoint
-const COLUMNS_XXL = 6;
-const COLUMNS_XL = 5;
-const COLUMNS_LG = 4;
-const COLUMNS_MD = 3;
-const COLUMNS_SM = 2;
-// Default column count
-const DEFAULT_COLUMNS = 4;
-
-// Number of tile copies for infinite scrolling (2 = original + 1 copy for seamless wrap)
-const X_TILE_COPIES = 2;
-
-// EDGE EFFECTS CONFIGURATION
-// Scale reduction factor as items approach edges (0-1)
-const EDGE_SCALE_FACTOR = 0.2;
-// Opacity reduction factor as items approach edges (0-1)
-const EDGE_OPACITY_FACTOR = 0.25;
-// Z-depth offset multiplier for edge effect (px)
-const EDGE_Z_OFFSET_MULTIPLIER = 80;
-// Visibility buffer zone around viewport (px)
-const VISIBILITY_BUFFER = 100;
-
-// GRID LAYOUT CONFIGURATION
-// Default item height if not provided (px)
-const DEFAULT_ITEM_HEIGHT = 400;
-// Height scaling factor for items
-const HEIGHT_SCALE_FACTOR = 0.6;
-// Minimum item height (px)
-const MIN_ITEM_HEIGHT = 180;
-// Maximum item height (px)
-const MAX_ITEM_HEIGHT = 500;
-
-// ANIMATION CONFIGURATION
-// Initialization delay after images load (ms)
-const INITIALIZATION_DELAY = 100;
-// Momentum factor for drag inertia (seconds equivalent)
 const MOMENTUM_FACTOR = 0.12;
-// Default hover scale for items
-const DEFAULT_HOVER_SCALE = 0.96;
-// Image hover scale on inner element
-const IMAGE_HOVER_SCALE = 1.05;
-// Overlay opacity when hovered
-const OVERLAY_HOVER_OPACITY = 0.3;
-// Overlay opacity when not hovered
-const OVERLAY_DEFAULT_OPACITY = 0.6;
-// Transition duration for transforms (ms)
-const TRANSFORM_DURATION = 500;
-// Transition duration for image scale (ms)
-const IMAGE_SCALE_DURATION = 700;
-// Transition duration for overlay opacity (ms)
-const OVERLAY_OPACITY_DURATION = 300;
-// Canvas fade-in duration (seconds)
-const CANVAS_FADE_DURATION = 0.8;
-// Canvas fade-in easing curve
-const CANVAS_FADE_EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
-// Instruction overlay delay (seconds)
-const INSTRUCTION_OVERLAY_DELAY = 1.2;
-// Instruction overlay duration (seconds)
-const INSTRUCTION_OVERLAY_DURATION = 0.6;
+const VISIBILITY_BUFFER = 200; // Increased buffer for smoother entry
 
-// Pulse animation delays for instruction dots (seconds)
-const PULSE_DELAY_1 = 0.2;
-const PULSE_DELAY_2 = 0.4;
-
-// Perspective depth for 3D transforms (px)
+// Visual configuration
+const DEFAULT_ITEM_HEIGHT = 400;
+const MIN_ITEM_HEIGHT = 180;
+const MAX_ITEM_HEIGHT = 500;
+const EDGE_SCALE_FACTOR = 0.2;
+const EDGE_OPACITY_FACTOR = 0.25;
+const EDGE_Z_OFFSET = 80;
 const PERSPECTIVE_DEPTH = 1200;
 
-// TYPES
+// Breakpoints for column sizing (keeping consistent with original design)
+const BREAKPOINTS = {
+  XXL: { width: 1800, cols: 6 },
+  XL: { width: 1400, cols: 5 },
+  LG: { width: 1000, cols: 4 },
+  MD: { width: 700, cols: 3 },
+  SM: { width: 500, cols: 2 },
+};
+const DEFAULT_COLUMNS = 4;
+
+// --- TYPES ---
 interface GridItem extends MediaItem {
   x: number;
   y: number;
   w: number;
   h: number;
-  column: number;
   originalId: string;
 }
 
@@ -124,85 +60,19 @@ interface InfiniteCanvasProps {
   hoverScale?: number;
 }
 
-// UTILITY FUNCTIONS
+// --- UTILS ---
 
-// Wrap function for true infinite scrolling - keeps value in [0, max) range
-const wrap = (value: number, max: number): number => {
-  if (max === 0) return 0;
-  return ((value % max) + max) % max;
-};
+// Standard modulo that handles negative numbers correctly: ((n % m) + m) % m
+const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-// Calculate edge distance factor (0 at center, 1 at edge)
-const getEdgeFactor = (
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  itemW: number,
-  itemH: number,
-  viewportW: number,
-  viewportH: number,
-): number => {
-  const centerX = x + itemW / 2;
-  const centerY = y + itemH / 2;
-
-  // Distance from center of viewport as percentage
-  const distX = Math.abs(centerX - viewportW / 2) / (viewportW / 2);
-  const distY = Math.abs(centerY - viewportH / 2) / (viewportH / 2);
-
-  // Use max distance for edge effect
-  return Math.min(Math.max(distX, distY), 1);
-};
-
-// RESPONSIVE COLUMNS HOOK
-const useColumns = () => {
-  const [columns, setColumns] = useState(DEFAULT_COLUMNS);
-
-  useEffect(() => {
-    const getColumns = () => {
-      const width = window.innerWidth;
-      if (width >= BREAKPOINT_XXL) return COLUMNS_XXL;
-      if (width >= BREAKPOINT_XL) return COLUMNS_XL;
-      if (width >= BREAKPOINT_LG) return COLUMNS_LG;
-      if (width >= BREAKPOINT_MD) return COLUMNS_MD;
-      if (width >= BREAKPOINT_SM) return COLUMNS_SM;
-      return COLUMNS_SM;
-    };
-
-    setColumns(getColumns());
-
-    const handleResize = () => setColumns(getColumns());
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return columns;
-};
-
-// TOUCH DEVICE DETECTION HOOK
-const useIsTouchDevice = () => {
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
-    const checkTouch = () => {
-      return "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    };
-    setIsTouch(checkTouch());
-  }, []);
-
-  return isTouch;
-};
-
-// GRID ITEM COMPONENT
-// Each item updates its position via animation frame for GPU-accelerated movement
+// --- COMPONENT: GRID ITEM ---
 const GridItemComponent = ({
   item,
   scrollX,
   scrollY,
-  tileWidth,
-  tileHeight,
-  viewportWidth,
-  viewportHeight,
+  totalWidth,
+  totalHeight,
+  viewportSize,
   onItemClick,
   scaleOnHover,
   hoverScale,
@@ -211,10 +81,9 @@ const GridItemComponent = ({
   item: GridItem;
   scrollX: MotionValue<number>;
   scrollY: MotionValue<number>;
-  tileWidth: number;
-  tileHeight: number;
-  viewportWidth: number;
-  viewportHeight: number;
+  totalWidth: number;
+  totalHeight: number;
+  viewportSize: { width: number; height: number };
   onItemClick: (item: GridItem) => void;
   scaleOnHover: boolean;
   hoverScale: number;
@@ -224,230 +93,224 @@ const GridItemComponent = ({
   const innerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Use animation frame for GPU-accelerated position updates
-  useAnimationFrame(() => {
-    if (!ref.current || tileWidth === 0 || tileHeight === 0) return;
+useAnimationFrame(() => {
+  if (!ref.current || totalWidth === 0 || totalHeight === 0) return;
 
-    const currentScrollX = scrollX.get();
-    const currentScrollY = scrollY.get();
+  const currentX = scrollX.get();
+  const currentY = scrollY.get();
 
-    // Calculate wrapped position using modulo for infinite scrolling
-    // The wrap function returns a value in [0, tileWidth) / [0, tileHeight)
-    let wrappedX = wrap(item.x + currentScrollX, tileWidth);
-    let wrappedY = wrap(item.y + currentScrollY, tileHeight);
+  // 1. Calculate raw position based on scroll (forces value between 0 and totalWidth)
+  let wrappedX = mod(item.x + currentX, totalWidth);
+  let wrappedY = mod(item.y + currentY, totalHeight);
 
-    // Shift items to create seamless infinite scrolling
-    // We need items to appear both before and after the viewport
-    // Center the wrapped position so items tile correctly in both directions
-    if (wrappedX > viewportWidth + item.w) {
-      wrappedX -= tileWidth;
-    }
-    if (wrappedY > viewportHeight + item.h) {
-      wrappedY -= tileHeight;
-    }
+  // 2. Smart Wrap Logic 
+  // "If we shift this item to the left/top by subtracting totalWidth, is it visible?"
+  
+  // Check X axis
+  const shiftX = wrappedX - totalWidth;
+  if (wrappedX > viewportSize.width && shiftX > -(item.w + VISIBILITY_BUFFER)) {
+    wrappedX -= totalWidth;
+  }
 
-    // Calculate edge effects for parallax/lens effect
-    const edgeFactor = getEdgeFactor(
-      wrappedX,
-      wrappedY,
-      item.w,
-      item.h,
-      item.w,
-      item.h,
-      viewportWidth,
-      viewportHeight,
-    );
+  // Check Y axis
+  const shiftY = wrappedY - totalHeight;
+  if (wrappedY > viewportSize.height && shiftY > -(item.h + VISIBILITY_BUFFER)) {
+    wrappedY -= totalHeight;
+  }
 
-    // Scale decreases slightly as items approach edges
-    const edgeScale = 1 - edgeFactor * EDGE_SCALE_FACTOR;
+  // 3. Calculate Parallax/Edge Effects
+  const centerX = wrappedX + item.w / 2;
+  const centerY = wrappedY + item.h / 2;
+  
+  const distX = Math.abs(centerX - viewportSize.width / 2) / (viewportSize.width / 2);
+  const distY = Math.abs(centerY - viewportSize.height / 2) / (viewportSize.height / 2);
+  
+  const edgeFactor = Math.min(Math.max(distX, distY), 1); 
 
-    // Opacity decreases as items approach edges (subtle)
-    const edgeOpacity = 1 - edgeFactor * EDGE_OPACITY_FACTOR;
+  const visible = 
+    wrappedX + item.w > -VISIBILITY_BUFFER &&
+    wrappedX < viewportSize.width + VISIBILITY_BUFFER &&
+    wrappedY + item.h > -VISIBILITY_BUFFER &&
+    wrappedY < viewportSize.height + VISIBILITY_BUFFER;
 
-    // Z-depth effect - items near center come forward slightly
-    const zOffset = edgeFactor * EDGE_Z_OFFSET_MULTIPLIER;
+  if (visible) {
+    const zOffset = edgeFactor * EDGE_Z_OFFSET;
+    const scale = 1 - edgeFactor * EDGE_SCALE_FACTOR;
+    const opacity = 1 - edgeFactor * EDGE_OPACITY_FACTOR;
 
-    // Check visibility with extended buffer
-    const buffer = VISIBILITY_BUFFER;
-    const visible =
-      wrappedX + item.w > -buffer &&
-      wrappedX < viewportWidth + buffer &&
-      wrappedY + item.h > -buffer &&
-      wrappedY < viewportHeight + buffer;
-
-    // GPU-accelerated transform with 3D for depth
     ref.current.style.transform = `translate3d(${wrappedX}px, ${wrappedY}px, ${-zOffset}px)`;
-    ref.current.style.visibility = visible ? "visible" : "hidden";
-    ref.current.style.pointerEvents = visible ? "auto" : "none";
-
-    // Apply edge effects to inner element for smooth transitions
+    ref.current.style.display = 'block'; 
+    
     if (innerRef.current) {
-      innerRef.current.style.transform = `scale(${edgeScale})`;
-      innerRef.current.style.opacity = String(edgeOpacity);
+      innerRef.current.style.transform = `scale(${scale})`;
+      innerRef.current.style.opacity = String(opacity);
     }
-  });
-
-  const handleClick = () => {
-    if (dragDistanceRef.current < DRAG_THRESHOLD) {
-      onItemClick(item);
-    }
-  };
+  } else {
+    ref.current.style.display = 'none';
+  }
+});
 
   return (
     <div
       ref={ref}
-      className="absolute"
+      className="absolute will-change-transform"
       style={{
         width: `${item.w}px`,
         height: `${item.h}px`,
-        willChange: "transform",
         transformStyle: "preserve-3d",
       }}
-      onClick={handleClick}
+      onClick={() => dragDistanceRef.current < DRAG_THRESHOLD && onItemClick(item)}
       onMouseEnter={() => scaleOnHover && setIsHovered(true)}
       onMouseLeave={() => scaleOnHover && setIsHovered(false)}
     >
       <div
         ref={innerRef}
-        className="relative w-full h-full transition-transform ease-out cursor-pointer overflow-hidden rounded-sm"
+        className="relative w-full h-full overflow-hidden rounded-sm cursor-pointer"
         style={{
           transformOrigin: "center center",
-          transform: isHovered ? `scale(${hoverScale})` : "scale(1)",
-          transitionDuration: `${TRANSFORM_DURATION}ms`,
+          transition: "transform 0.1s linear, opacity 0.1s linear" // Smooth out pure JS updates
         }}
       >
-        {/* Main Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform ease-out"
-          style={{
-            backgroundImage: `url(${item.img})`,
-            transform: isHovered ? `scale(${IMAGE_HOVER_SCALE})` : "scale(1)",
-            transitionDuration: `${IMAGE_SCALE_DURATION}ms`,
-          }}
-        />
+        {/* Inner Scale wrapper for Hover Effect */}
+        <div 
+          className="w-full h-full transition-transform duration-500 ease-out"
+          style={{ transform: isHovered ? `scale(${hoverScale})` : "scale(1)" }}
+        >
+            {/* Image */}
+            <div
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out"
+            style={{
+                backgroundImage: `url(${item.img})`,
+                transform: isHovered ? "scale(1.05)" : "scale(1)",
+            }}
+            />
 
-        {/* Overlay gradient for depth */}
-        <div
-          className="absolute inset-0 transition-opacity"
-          style={{
-            background:
-              "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)",
-            opacity: isHovered
-              ? OVERLAY_HOVER_OPACITY
-              : OVERLAY_DEFAULT_OPACITY,
-            transitionDuration: `${OVERLAY_OPACITY_DURATION}ms`,
-          }}
-        />
+            {/* Overlay */}
+            <div
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+                background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)",
+                opacity: isHovered ? 0.3 : 0.6,
+            }}
+            />
 
-        {/* Hover glow effect */}
-        <div
-          className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
-          style={{
-            boxShadow: isHovered
-              ? "inset 0 0 30px rgba(255,255,255,0.1), 0 20px 60px -20px rgba(0,0,0,0.5)"
-              : "inset 0 0 0 rgba(255,255,255,0)",
-            opacity: isHovered ? 1 : 0,
-          }}
-        />
+            {/* Hover Glow */}
+            <div
+            className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
+            style={{
+                boxShadow: isHovered
+                ? "inset 0 0 30px rgba(255,255,255,0.1), 0 20px 60px -20px rgba(0,0,0,0.5)"
+                : "none",
+                opacity: isHovered ? 1 : 0,
+            }}
+            />
 
-        {/* Album indicator */}
-        {item.type === "album" && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/90 px-3 py-1.5 rounded-full text-xs font-medium tracking-wide">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-            </svg>
-            {item.albumName || "Album"} · {item.albumItems?.length || 0}
-          </div>
-        )}
+            {/* Album Badge */}
+            {item.type === "album" && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/90 px-3 py-1.5 rounded-full text-xs font-medium tracking-wide">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>
+                {item.albumName || "Album"} · {item.albumItems?.length || 0}
+            </div>
+            )}
+        </div>
       </div>
     </div>
   );
 };
 
+// --- MAIN COMPONENT ---
+
 const InfiniteCanvas = ({
   items,
   scaleOnHover = true,
-  hoverScale = DEFAULT_HOVER_SCALE,
+  hoverScale = 0.96,
 }: InfiniteCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const columns = useColumns();
-  const isTouchDevice = useIsTouchDevice();
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [imagesReady, setImagesReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // MOTION VALUES - Core of the infinite canvas physics
-
-  // Raw scroll values (set directly by drag/wheel)
+  // Physics State
   const rawScrollX = useMotionValue(0);
   const rawScrollY = useMotionValue(0);
-
-  // Spring-smoothed values for rendering (provides inertia)
   const scrollX = useSpring(rawScrollX, SPRING_CONFIG);
   const scrollY = useSpring(rawScrollY, SPRING_CONFIG);
-
-  // Velocity tracking for momentum
+  
+  // Interaction Refs
   const velocityX = useRef(0);
   const velocityY = useRef(0);
-  const lastDragTime = useRef(Date.now());
   const dragDistanceRef = useRef(0);
   const isDragging = useRef(false);
 
   const { openGallery, openAlbum } = useGallery();
 
-  // PRELOAD IMAGES
+  // Detect Touch
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   useEffect(() => {
-    const urls = items.map((i) => i.img);
-    preloadImages(urls).then(() => {
-      setImagesReady(true);
-      // Slight delay for smooth entrance
-      setTimeout(() => setIsInitialized(true), INITIALIZATION_DELAY);
-    });
-  }, [items]);
+    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  }, []);
 
-  // VIEWPORT SIZE TRACKING
-  // Use window dimensions directly for fixed inset-0 container
-  // This ensures we have correct dimensions on initial load before container mounts
+  // Viewport Handling
   useLayoutEffect(() => {
     const updateSize = () => {
-      // For fixed inset-0 container, use window dimensions directly
-      // This avoids the issue where containerRef isn't available during loading state
       setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     };
-
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // GRID LAYOUT CALCULATION
-  // Creates the "tile" that repeats infinitely in all directions
-  // Optimized to create minimal DOM elements - only enough to cover viewport + buffer
-  const { grid, tileWidth, tileHeight } = useMemo(() => {
+  // Preload
+  useEffect(() => {
+    if(!items.length) return;
+    preloadImages(items.map((i) => i.img)).then(() => {
+      setImagesReady(true);
+      setTimeout(() => setIsInitialized(true), 100);
+    });
+  }, [items]);
+
+  // --- LAYOUT GENERATION ---
+  // Calculates the grid ONCE. 
+  // Solves the "repetition" issue by creating a roughly square grid regardless of viewport width.
+  const { gridItems, totalWidth, totalHeight } = useMemo(() => {
     if (!viewportSize.width || items.length === 0) {
-      return { grid: [], tileWidth: 0, tileHeight: 0 };
+      return { gridItems: [], totalWidth: 0, totalHeight: 0 };
     }
 
-    const colHeights = new Array(columns).fill(0);
-    const totalGaps = (columns - 1) * GAP;
-    const columnWidth = (viewportSize.width - totalGaps - GAP * 2) / columns;
+    // 1. Determine Column Width based on responsive logic
+    // We check what the "screen" column count would be to determine an appropriate tile width
+    let screenCols = DEFAULT_COLUMNS;
+    const w = viewportSize.width;
+    if (w >= BREAKPOINTS.XXL.width) screenCols = BREAKPOINTS.XXL.cols;
+    else if (w >= BREAKPOINTS.XL.width) screenCols = BREAKPOINTS.XL.cols;
+    else if (w >= BREAKPOINTS.LG.width) screenCols = BREAKPOINTS.LG.cols;
+    else if (w >= BREAKPOINTS.MD.width) screenCols = BREAKPOINTS.MD.cols;
+    else if (w >= BREAKPOINTS.SM.width) screenCols = BREAKPOINTS.SM.cols;
+    else screenCols = 2; // Mobile fallback
 
-    const gridItems: GridItem[] = items.map((child) => {
-      const col = colHeights.indexOf(Math.min(...colHeights));
-      const x = GAP + col * (columnWidth + GAP);
-      // Vary heights more dramatically for visual interest
+    // Calculate the physical width of a column based on screen size
+    const columnWidth = (viewportSize.width - (screenCols - 1) * GAP - GAP * 2) / screenCols;
+
+    // 2. Determine "Virtual" Grid Dimensions
+    const idealCols = Math.ceil(Math.sqrt(items.length));
+    const activeCols = Math.max(screenCols, idealCols); 
+
+    // 3. Masonry Layout Algorithm
+    const colHeights = new Array(activeCols).fill(0);
+    const calculatedItems: GridItem[] = items.map((child) => {
+        // Find shortest column
+      const colIndex = colHeights.indexOf(Math.min(...colHeights));
+      
+      const x = GAP + colIndex * (columnWidth + GAP);
+      const y = colHeights[colIndex];
+      
+      // Randomize height slightly for visual interest
       const baseHeight = child.height || DEFAULT_ITEM_HEIGHT;
-      const height = Math.min(
-        Math.max(baseHeight * HEIGHT_SCALE_FACTOR, MIN_ITEM_HEIGHT),
-        MAX_ITEM_HEIGHT,
-      );
-      const y = colHeights[col];
+      const h = Math.min(Math.max(baseHeight * 0.6, MIN_ITEM_HEIGHT), MAX_ITEM_HEIGHT);
 
-      colHeights[col] += height + GAP;
+      colHeights[colIndex] += h + GAP;
 
       return {
         ...child,
@@ -455,210 +318,96 @@ const InfiniteCanvas = ({
         x,
         y,
         w: columnWidth,
-        h: height,
-        column: col,
+        h,
+        column: colIndex,
       };
     });
 
-    // Tile dimensions for wrapping
-    const tileH = Math.max(...colHeights) + GAP;
-    const tileW = viewportSize.width;
-
-    // Calculate minimal tile copies needed:
-    // - Horizontally: need X_TILE_COPIES to enable seamless infinite scrolling
-    // - Vertically: need enough to cover viewport height with buffer
-    const repeatY = Math.max(1, Math.ceil(viewportSize.height / tileH));
-
-    const expandedGrid: GridItem[] = [];
-
-    // Create tiles for both X and Y to enable infinite scrolling in all directions
-    // X needs multiple copies since tileW = viewportWidth, we need overlap for seamless scrolling
-    // Y needs enough copies to cover viewport height plus buffer
-    for (let rx = 0; rx < X_TILE_COPIES; rx++) {
-      for (let ry = 0; ry <= repeatY; ry++) {
-        gridItems.forEach((item) => {
-          expandedGrid.push({
-            ...item,
-            id: `${item.id}-${rx}-${ry}`,
-            x: item.x + rx * tileW,
-            y: item.y + ry * tileH,
-          });
-        });
-      }
-    }
-
     return {
-      grid: expandedGrid,
-      tileWidth: tileW * X_TILE_COPIES, // Total width of all X copies for proper wrapping
-      tileHeight: tileH,
+      gridItems: calculatedItems,
+      totalWidth: activeCols * (columnWidth + GAP) + GAP,
+      totalHeight: Math.max(...colHeights) + GAP,
     };
-  }, [items, columns, viewportSize.width, viewportSize.height]);
+  }, [items, viewportSize]);
 
-  // WHEEL HANDLER - Smooth trackpad/mouse wheel scrolling
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
+  // --- EVENT HANDLERS ---
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    rawScrollX.set(rawScrollX.get() - e.deltaX * WHEEL_SENSITIVITY);
+    rawScrollY.set(rawScrollY.get() - e.deltaY * WHEEL_SENSITIVITY);
+  }, [rawScrollX, rawScrollY]);
 
-      // Apply wheel delta to raw values (spring will smooth it)
-      const deltaX = e.deltaX * WHEEL_SENSITIVITY;
-      const deltaY = e.deltaY * WHEEL_SENSITIVITY;
-
-      rawScrollX.set(rawScrollX.get() - deltaX);
-      rawScrollY.set(rawScrollY.get() - deltaY);
-    },
-    [rawScrollX, rawScrollY],
-  );
-
-  // DRAG HANDLERS - Weighty drag with momentum
-  const handleDragStart = useCallback(() => {
-    isDragging.current = true;
-    dragDistanceRef.current = 0;
-    velocityX.current = 0;
-    velocityY.current = 0;
-    lastDragTime.current = Date.now();
-  }, []);
-
-  const handleDrag = useCallback(
-    (
-      _: MouseEvent | TouchEvent | PointerEvent,
-      info: {
-        delta: { x: number; y: number };
-        velocity: { x: number; y: number };
-        offset: { x: number; y: number };
-      },
-    ) => {
-      const now = Date.now();
-
-      // Track cumulative drag distance
-      dragDistanceRef.current = Math.sqrt(
-        info.offset.x ** 2 + info.offset.y ** 2,
-      );
-
-      // Store velocity for momentum
-      velocityX.current = info.velocity.x;
-      velocityY.current = info.velocity.y;
-      lastDragTime.current = now;
-
-      // Update raw scroll position (spring smooths it)
-      rawScrollX.set(rawScrollX.get() + info.delta.x);
-      rawScrollY.set(rawScrollY.get() + info.delta.y);
-    },
-    [rawScrollX, rawScrollY],
-  );
+  const handleDrag = useCallback((_: any, info: any) => {
+    dragDistanceRef.current = Math.sqrt(info.offset.x ** 2 + info.offset.y ** 2);
+    velocityX.current = info.velocity.x;
+    velocityY.current = info.velocity.y;
+    rawScrollX.set(rawScrollX.get() + info.delta.x);
+    rawScrollY.set(rawScrollY.get() + info.delta.y);
+  }, [rawScrollX, rawScrollY]);
 
   const handleDragEnd = useCallback(() => {
     isDragging.current = false;
-
-    // Apply momentum - continue in direction of velocity
     const targetX = rawScrollX.get() + velocityX.current * MOMENTUM_FACTOR;
     const targetY = rawScrollY.get() + velocityY.current * MOMENTUM_FACTOR;
-
-    // Use inertia config for post-drag animation
     rawScrollX.set(targetX);
     rawScrollY.set(targetY);
   }, [rawScrollX, rawScrollY]);
 
-  // ITEM CLICK HANDLER
-  const handleItemClick = useCallback(
-    (clickedItem: GridItem) => {
-      const originalItem =
-        items.find((item) => item.id === clickedItem.originalId) || clickedItem;
-
-      if (originalItem.type === "album" && originalItem.albumItems) {
-        openAlbum(originalItem.albumItems, originalItem.albumName || "Album");
-      } else {
-        const clickedIndex = items.findIndex(
-          (item) => item.id === clickedItem.originalId,
-        );
-        openGallery(items, Math.max(0, clickedIndex));
-      }
-    },
-    [items, openGallery, openAlbum],
-  );
-
-  // LOADING STATE
+  // --- RENDER LOADING ---
   if (!imagesReady || items.length === 0) {
     return (
-      <div
-        className="fixed inset-0 flex items-center justify-center"
-        style={{
-          background:
-            "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)",
-        }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />
-            <div
-              className="absolute inset-0 w-12 h-12 rounded-full border-2 border-transparent border-b-white/30 animate-spin"
-              style={{
-                animationDirection: "reverse",
-                animationDuration: "1.5s",
-              }}
-            />
-          </div>
-          <p className="text-white/40 text-sm tracking-widest uppercase">
-            Loading Gallery
-          </p>
-        </div>
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a]">
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
       </div>
     );
   }
 
+  // --- RENDER MAIN ---
   return (
     <motion.div
       ref={containerRef}
       className={`fixed inset-0 overflow-hidden ${isTouchDevice ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
-        touchAction: isTouchDevice ? "none" : "auto",
+        background: `radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%)`,
         perspective: `${PERSPECTIVE_DEPTH}px`,
-        perspectiveOrigin: "50% 50%",
-        background: `
-          radial-gradient(ellipse at 30% 20%, rgba(40, 40, 60, 0.4) 0%, transparent 50%),
-          radial-gradient(ellipse at 70% 80%, rgba(30, 30, 50, 0.3) 0%, transparent 50%),
-          linear-gradient(135deg, #0a0a0a 0%, #12121f 50%, #0a0a0a 100%)
-        `,
+        touchAction: "none",
       }}
       onWheel={handleWheel}
       drag={isTouchDevice}
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }} // Infinite drag
       dragElastic={0}
-      dragMomentum={false}
-      onDragStart={handleDragStart}
+      dragMomentum={false} // We handle momentum manually via springs
+      onDragStart={() => { isDragging.current = true; dragDistanceRef.current = 0; }}
       onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       initial={{ opacity: 0 }}
       animate={{ opacity: isInitialized ? 1 : 0 }}
-      transition={{ duration: CANVAS_FADE_DURATION, ease: CANVAS_FADE_EASING }}
+      transition={{ duration: 0.8 }}
     >
-      {/* Vignette overlay for depth */}
-      <div
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          background: `
-            radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)
-          `,
-        }}
-      />
-
-      {/* Grid container with 3D perspective */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {grid.map((item) => (
+        {/* Background Gradients/Vignette */}
+      <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(transparent_30%,rgba(0,0,0,0.6)_100%)]" />
+      <div className="absolute top-0 left-0 w-64 h-64 pointer-events-none z-10 opacity-30 bg-[radial-gradient(circle_at_top_left,rgba(100,100,255,0.1),transparent_70%)]" />
+      
+      {/* 3D Container */}
+      <div className="absolute inset-0 preserve-3d">
+        {gridItems.map((item) => (
           <GridItemComponent
             key={item.id}
             item={item}
             scrollX={scrollX}
             scrollY={scrollY}
-            tileWidth={tileWidth}
-            tileHeight={tileHeight}
-            viewportWidth={viewportSize.width}
-            viewportHeight={viewportSize.height}
-            onItemClick={handleItemClick}
+            totalWidth={totalWidth}
+            totalHeight={totalHeight}
+            viewportSize={viewportSize}
+            onItemClick={(item) => {
+               // Map back to original dataset index
+               const index = items.findIndex(i => i.id === item.originalId);
+               if(item.type === "album" && item.albumItems) {
+                   openAlbum(item.albumItems, item.albumName || "Album");
+               } else {
+                   openGallery(items, index);
+               }
+            }}
             scaleOnHover={scaleOnHover}
             hoverScale={hoverScale}
             dragDistanceRef={dragDistanceRef}
@@ -666,51 +415,19 @@ const InfiniteCanvas = ({
         ))}
       </div>
 
-      {/* Subtle instruction overlay */}
+      {/* Instructions */}
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: INSTRUCTION_OVERLAY_DELAY,
-          duration: INSTRUCTION_OVERLAY_DURATION,
-        }}
+        transition={{ delay: 1, duration: 0.6 }}
       >
         <div className="flex items-center gap-3 px-5 py-2.5 bg-white/5 backdrop-blur-xl rounded-full border border-white/10">
-          <div className="flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse"
-              style={{ animationDelay: `${PULSE_DELAY_1}s` }}
-            />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-white/20 animate-pulse"
-              style={{ animationDelay: `${PULSE_DELAY_2}s` }}
-            />
-          </div>
           <span className="text-white/50 text-xs tracking-[0.2em] uppercase font-light">
-            {isTouchDevice
-              ? "Drag to explore · Tap to view"
-              : "Scroll to explore · Click to view"}
+            {isTouchDevice ? "Drag to explore" : "Scroll to explore"}
           </span>
         </div>
       </motion.div>
-
-      {/* Corner gradient accents */}
-      <div
-        className="absolute top-0 left-0 w-64 h-64 pointer-events-none z-10 opacity-30"
-        style={{
-          background:
-            "radial-gradient(circle at top left, rgba(100, 100, 255, 0.1) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none z-10 opacity-30"
-        style={{
-          background:
-            "radial-gradient(circle at bottom right, rgba(255, 100, 100, 0.08) 0%, transparent 70%)",
-        }}
-      />
     </motion.div>
   );
 };
