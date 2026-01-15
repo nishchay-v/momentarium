@@ -1,0 +1,23 @@
+{
+  "name": "Momentarium Dev Env",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  // This maps your Mac folder to the container
+  "workspaceFolder": "/workspaces/momentarium-dev",
+  "mounts": [
+    // Performance: Keep node_modules in a Docker volume, not synced to Mac
+    "source=momentarium-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm install"
+}
