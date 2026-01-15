@@ -271,9 +271,9 @@ const InfiniteCanvas = ({
     });
   }, [items]);
 
-  // --- LAYOUT GENERATION ---
-  // Calculates the grid ONCE. 
-  // Solves the "repetition" issue by creating a roughly square grid regardless of viewport width.
+// --- LAYOUT GENERATION ---
+  // Calculates the grid ONCE.
+  // Now creates a grid layout that mirrors the viewport's aspect ratio.
   const { gridItems, totalWidth, totalHeight } = useMemo(() => {
     if (!viewportSize.width || items.length === 0) {
       return { gridItems: [], totalWidth: 0, totalHeight: 0 };
@@ -283,6 +283,8 @@ const InfiniteCanvas = ({
     // We check what the "screen" column count would be to determine an appropriate tile width
     let screenCols = DEFAULT_COLUMNS;
     const w = viewportSize.width;
+    const h = viewportSize.height;
+
     if (w >= BREAKPOINTS.XXL.width) screenCols = BREAKPOINTS.XXL.cols;
     else if (w >= BREAKPOINTS.XL.width) screenCols = BREAKPOINTS.XL.cols;
     else if (w >= BREAKPOINTS.LG.width) screenCols = BREAKPOINTS.LG.cols;
@@ -290,27 +292,39 @@ const InfiniteCanvas = ({
     else if (w >= BREAKPOINTS.SM.width) screenCols = BREAKPOINTS.SM.cols;
     else screenCols = 2; // Mobile fallback
 
-    // Calculate the physical width of a column based on screen size
-    const columnWidth = (viewportSize.width - (screenCols - 1) * GAP - GAP * 2) / screenCols;
+    // Calculate the physical width of a column based on visible screen columns
+    const columnWidth = (w - (screenCols - 1) * GAP - GAP * 2) / screenCols;
 
     // 2. Determine "Virtual" Grid Dimensions
-    const idealCols = Math.ceil(Math.sqrt(items.length));
-    const activeCols = Math.max(screenCols, idealCols); 
+    // Calculate columns needed to match viewport Aspect Ratio (Width / Height)
+    const viewportAspectRatio = w / h;
+    
+    // Formula: cols = sqrt(N * ratio)
+    // This creates a grid shape that roughly matches the screen shape
+    const rawIdealCols = Math.sqrt(items.length * viewportAspectRatio);
+    const idealCols = Math.ceil(rawIdealCols);
+
+    // Ensure we at least fill the screen horizontally (screenCols)
+    // and have a minimum width for very small datasets
+    const activeCols = Math.max(screenCols, idealCols);
 
     // 3. Masonry Layout Algorithm
     const colHeights = new Array(activeCols).fill(0);
     const calculatedItems: GridItem[] = items.map((child) => {
-        // Find shortest column
+      // Find shortest column
       const colIndex = colHeights.indexOf(Math.min(...colHeights));
-      
+
       const x = GAP + colIndex * (columnWidth + GAP);
       const y = colHeights[colIndex];
-      
+
       // Randomize height slightly for visual interest
       const baseHeight = child.height || DEFAULT_ITEM_HEIGHT;
-      const h = Math.min(Math.max(baseHeight * 0.6, MIN_ITEM_HEIGHT), MAX_ITEM_HEIGHT);
+      const height = Math.min(
+        Math.max(baseHeight * 0.6, MIN_ITEM_HEIGHT),
+        MAX_ITEM_HEIGHT
+      );
 
-      colHeights[colIndex] += h + GAP;
+      colHeights[colIndex] += height + GAP;
 
       return {
         ...child,
@@ -318,7 +332,7 @@ const InfiniteCanvas = ({
         x,
         y,
         w: columnWidth,
-        h,
+        h: height,
         column: colIndex,
       };
     });
