@@ -14,6 +14,7 @@ import {
   useSpring,
   useAnimationFrame,
   MotionValue,
+  PanInfo,
 } from "framer-motion";
 import { useGallery, MediaItem } from "./GalleryProvider";
 import { preloadImages } from "@/lib/imageCache";
@@ -21,21 +22,23 @@ import { preloadImages } from "@/lib/imageCache";
 // --- CONFIGURATION ---
 const SPRING_CONFIG = { stiffness: 200, damping: 100, mass: 0.5 };
 const WHEEL_SENSITIVITY = 1;
-const GAP = 20;
+const GAP = 32;
 const DRAG_THRESHOLD = 8;
-const MOMENTUM_FACTOR = 0.12;
+const MOMENTUM_FACTOR = 0.05;
 const VISIBILITY_BUFFER = 200; // Increased buffer for smoother entry
+const INITIAL_ANIMATION_DURATION = 0.6;
 
 // Visual configuration
-const DEFAULT_ITEM_HEIGHT = 400;
-const MIN_ITEM_HEIGHT = 180;
-const MAX_ITEM_HEIGHT = 500;
-const EDGE_SCALE_FACTOR = 0.2;
-const EDGE_OPACITY_FACTOR = 0.25;
+const DEFAULT_ITEM_HEIGHT = 480;
+const MIN_ITEM_HEIGHT = 240;
+const MAX_ITEM_HEIGHT = 600;
+const EDGE_SCALE_FACTOR = 0.15;
+const EDGE_OPACITY_FACTOR = 0.2;
+const HEIGHT_MULTIPLIER = 0.8;
 const EDGE_Z_OFFSET = 80;
-const PERSPECTIVE_DEPTH = 1200;
+const PERSPECTIVE_DEPTH = 1000;
 
-// Breakpoints for column sizing (keeping consistent with original design)
+// Breakpoints for column sizing
 const BREAKPOINTS = {
   XXL: { width: 1800, cols: 6 },
   XL: { width: 1400, cols: 5 },
@@ -60,12 +63,9 @@ interface InfiniteCanvasProps {
   hoverScale?: number;
 }
 
-// --- UTILS ---
-
 // Standard modulo that handles negative numbers correctly: ((n % m) + m) % m
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-// --- COMPONENT: GRID ITEM ---
 const GridItemComponent = ({
   item,
   scrollX,
@@ -320,7 +320,7 @@ const InfiniteCanvas = ({
       // Randomize height slightly for visual interest
       const baseHeight = child.height || DEFAULT_ITEM_HEIGHT;
       const height = Math.min(
-        Math.max(baseHeight * 0.6, MIN_ITEM_HEIGHT),
+        Math.max(baseHeight * HEIGHT_MULTIPLIER, MIN_ITEM_HEIGHT),
         MAX_ITEM_HEIGHT
       );
 
@@ -351,7 +351,7 @@ const InfiniteCanvas = ({
     rawScrollY.set(rawScrollY.get() - e.deltaY * WHEEL_SENSITIVITY);
   }, [rawScrollX, rawScrollY]);
 
-  const handleDrag = useCallback((_: any, info: any) => {
+  const handleDrag = useCallback((_: Event, info: PanInfo) => {
     dragDistanceRef.current = Math.sqrt(info.offset.x ** 2 + info.offset.y ** 2);
     velocityX.current = info.velocity.x;
     velocityY.current = info.velocity.y;
@@ -396,7 +396,7 @@ const InfiniteCanvas = ({
       onDragEnd={handleDragEnd}
       initial={{ opacity: 0 }}
       animate={{ opacity: isInitialized ? 1 : 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: INITIAL_ANIMATION_DURATION }}
     >
         {/* Background Gradients/Vignette */}
       <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(transparent_30%,rgba(0,0,0,0.6)_100%)]" />
