@@ -5,9 +5,11 @@ A high-performance, animated masonry gallery with nested album support.
 ## Features
 
 ✅ **Responsive Masonry Grid** - Animated layout (1-5 columns)  
+✅ **Infinite Canvas** - Pannable gallery view  
 ✅ **Fullscreen Gallery** - Keyboard, touch, and swipe navigation  
 ✅ **Album Support** - Nested collections with breadcrumb navigation  
 ✅ **Smart Image Caching** - Preload current and adjacent images  
+✅ **Upload Support** - Drag & drop image upload with preview  
 ✅ **Smooth Animations** - GSAP-powered transitions  
 ✅ **Type-Safe** - Full TypeScript support
 
@@ -67,6 +69,8 @@ interface MediaItem {
 
   // Optional
   url?: string; // External link
+  isUploaded?: boolean; // Upload marker
+  file?: File; // Original file reference
 }
 ```
 
@@ -87,6 +91,18 @@ Responsive grid layout with animations.
   hoverScale={0.95} // Scale amount
   blurToFocus={true} // Blur animation
   colorShiftOnHover={false} // Color overlay
+/>
+```
+
+### Infinite Canvas
+
+Pannable and zoomable gallery view.
+
+```jsx
+<InfiniteCanvasWrapper
+  items={items} // MediaItem[]
+  scaleOnHover={true} // Hover effect
+  hoverScale={0.97} // Scale amount
 />
 ```
 
@@ -112,6 +128,8 @@ Navigation for albums. Automatically shows when inside an album.
 
 ### useGallery Hook
 
+For gallery viewing and album navigation.
+
 ```typescript
 const {
   items, // Current MediaItem[]
@@ -126,6 +144,21 @@ const {
   openAlbum, // (items, name) => void
   navigateBack, // () => void
 } = useGallery();
+```
+
+### useUpload Hook
+
+For image upload functionality (separate from gallery viewing).
+
+```typescript
+const {
+  uploadedItems, // Uploaded MediaItem[]
+  isUploading, // Upload in progress
+  uploadError, // Error message
+  addUploadedImages, // (files: File[]) => Promise<void>
+  deleteUploadedImage, // (id: string) => void
+  clearUploadedImages, // () => void
+} = useUpload();
 ```
 
 ### Image Cache
@@ -175,17 +208,26 @@ Images are **preloaded BEFORE opening** the gallery for instant display:
 
 ```
 src/
+├── types/
+│   └── media.ts              # Shared MediaItem type
 ├── lib/
-│   └── imageCache.ts          # Centralized image cache
+│   ├── imageCache.ts         # Centralized image cache
+│   └── imageStore.ts         # Upload utilities
 ├── components/
-│   ├── GalleryProvider.tsx    # State management + preloading
-│   ├── GalleryWrapper.tsx     # Provider wrapper
-│   ├── Gallery.tsx            # Fullscreen viewer
-│   ├── Masonry.jsx            # Grid layout
-│   ├── MasonryWrapper.tsx     # SSR-safe wrapper
-│   └── Breadcrumb.tsx         # Album navigation
+│   ├── GalleryProvider.tsx   # Gallery state (viewing + albums)
+│   ├── UploadProvider.tsx    # Upload state (separate concern)
+│   ├── GalleryWrapper.tsx    # Gallery provider wrapper
+│   ├── Gallery.tsx           # Fullscreen viewer
+│   ├── InfiniteCanvas.tsx    # Pannable canvas view
+│   ├── InfiniteCanvasWrapper.tsx # SSR-safe canvas wrapper
+│   ├── Masonry.jsx           # Grid layout
+│   ├── MasonryWrapper.tsx    # SSR-safe masonry wrapper
+│   ├── UploadModal.tsx       # Upload dialog
+│   └── Breadcrumb.tsx        # Album navigation
 └── app/
-    └── page.tsx               # Main page
+    ├── page.tsx              # Infinite Canvas demo
+    └── upload/
+        └── page.tsx          # Upload gallery page
 ```
 
 ## Performance
@@ -195,97 +237,12 @@ src/
 - **Single request** per image URL
 - **Smart preloading** - Current image loads synchronously, adjacent images in parallel
 
-## Examples
-
-### Programmatic Control
-
-```jsx
-import { useGallery } from "@/components/GalleryProvider";
-
-function MyComponent() {
-  const { openGallery, openAlbum } = useGallery();
-
-  // Open gallery
-  const handleImage = () => {
-    openGallery(items, 0);
-  };
-
-  // Open album
-  const handleAlbum = () => {
-    openAlbum(albumItems, "My Album");
-  };
-}
-```
-
-### Mixed Content
-
-```jsx
-const items = [
-  // Album
-  {
-    id: "album-1",
-    img: "cover.jpg",
-    type: "album",
-    albumName: "Vacation 2024",
-    height: 400,
-    albumItems: [
-      { id: "v1", img: "beach.jpg", type: "image", height: 350 },
-      { id: "v2", img: "sunset.jpg", type: "image", height: 450 },
-    ],
-  },
-  // Single image
-  {
-    id: "img-1",
-    img: "portrait.jpg",
-    type: "image",
-    height: 500,
-  },
-  // Another album
-  {
-    id: "album-2",
-    img: "work-cover.jpg",
-    type: "album",
-    albumName: "Work Events",
-    height: 350,
-    albumItems: [{ id: "w1", img: "meeting.jpg", type: "image", height: 300 }],
-  },
-];
-```
-
-## Troubleshooting
-
-### Images not loading?
-
-- Check network tab for errors
-- Verify image URLs are accessible
-- Check CORS headers
-
-### Gallery flickers?
-
-- Should be fixed with `key={currentItem.id}`
-- Check browser console for errors
-
-### Albums not opening?
-
-- Ensure `type: "album"` is set
-- Verify `albumItems` array exists
-- Check `openAlbum` is imported
-
-## Browser Support
-
-- Modern browsers (Chrome, Firefox, Safari, Edge)
-- Mobile Safari (iOS 12+)
-- Chrome Mobile (Android 8+)
-
 ## Tech Stack
 
 - **Next.js 14+** - React framework
 - **React 18+** - UI library
 - **TypeScript** - Type safety
 - **GSAP** - Animations
+- **Framer Motion** - UI animations
 - **Tailwind CSS** - Styling
 - **Lucide React** - Icons
-
-## License
-
-[Your License Here]

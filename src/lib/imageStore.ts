@@ -1,4 +1,4 @@
-import { MediaItem } from "@/components/GalleryProvider";
+import { MediaItem } from "@/types/media";
 
 // ID GENERATION CONFIGURATION
 // Prefix for uploaded image IDs

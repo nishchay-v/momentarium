@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useGallery } from "./GalleryProvider";
+import { useUpload } from "./UploadProvider";
 import { validateImageFiles } from "@/lib/imageStore";
 import {
   Upload,
@@ -38,7 +38,7 @@ interface PreviewFile {
 }
 
 const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
-  const { addUploadedImages, isUploading, uploadError } = useGallery();
+  const { addUploadedImages, isUploading, uploadError } = useUpload();
   const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);

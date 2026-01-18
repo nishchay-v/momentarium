@@ -4,6 +4,7 @@ import Masonry from "@/components/MasonryWrapper";
 import GalleryWrapper from "@/components/GalleryWrapper";
 import Breadcrumb from "@/components/Breadcrumb";
 import UploadModal from "@/components/UploadModal";
+import { UploadProvider, useUpload } from "@/components/UploadProvider";
 import { useGallery } from "@/components/GalleryProvider";
 import { useState } from "react";
 import { Upload, Image as ImageIcon, Plus } from "lucide-react";
@@ -18,7 +19,8 @@ const MASONRY_STAGGER = 0.05;
 const MASONRY_HOVER_SCALE = 0.95;
 
 function UploadMasonryView() {
-  const { uploadedItems, items: contextItems, navigationStack } = useGallery();
+  const { uploadedItems } = useUpload();
+  const { items: contextItems, navigationStack } = useGallery();
 
   // Use context items if in album, otherwise use uploaded items
   const displayItems =
@@ -76,7 +78,7 @@ function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
 }
 
 function UploadPageContent() {
-  const { uploadedItems } = useGallery();
+  const { uploadedItems } = useUpload();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   return (
@@ -120,10 +122,12 @@ function UploadPageContent() {
   );
 }
 
-export default function Home() {
+export default function UploadPage() {
   return (
-    <GalleryWrapper>
-      <UploadPageContent />
-    </GalleryWrapper>
+    <UploadProvider>
+      <GalleryWrapper>
+        <UploadPageContent />
+      </GalleryWrapper>
+    </UploadProvider>
   );
 }
