@@ -50,11 +50,11 @@ function DemoInfiniteCanvasView() {
           {/* Logo / Title */}
           <div className="pointer-events-auto">
             <h1 className="text-xl font-normal tracking-[0.3em] text-white/80 uppercase">
-              NVSH
+              Nishchay
             </h1>
-            <p className="text-xs text-white/40 tracking-[0.15em] uppercase mt-1">
-              Photography
-            </p>
+            {/* <p className="text-xs text-white/40 tracking-[0.15em] uppercase mt-1">
+              Gallery
+            </p> */}
           </div>
 
           {/* Breadcrumb for album navigation */}

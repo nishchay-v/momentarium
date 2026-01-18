@@ -27,6 +27,7 @@ const DRAG_THRESHOLD = 8;
 const MOMENTUM_FACTOR = 0.05;
 const VISIBILITY_BUFFER = 200; // Increased buffer for smoother entry
 const INITIAL_ANIMATION_DURATION = 0.6;
+const DEFAULT_HOVER_SCALE = 0.98;
 
 // Visual configuration
 const DEFAULT_ITEM_HEIGHT = 480;
@@ -199,7 +200,7 @@ useAnimationFrame(() => {
             className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
             style={{
                 boxShadow: isHovered
-                ? "inset 0 0 30px rgba(255,255,255,0.1), 0 20px 60px -20px rgba(0,0,0,0.5)"
+                ? "inset 0 0 50px rgba(255,255,255,0.1), 0 20px 60px -20px rgba(0,0,0,0.5)"
                 : "none",
                 opacity: isHovered ? 1 : 0,
             }}
@@ -225,7 +226,7 @@ useAnimationFrame(() => {
 const InfiniteCanvas = ({
   items,
   scaleOnHover = true,
-  hoverScale = 0.96,
+  hoverScale = DEFAULT_HOVER_SCALE,
 }: InfiniteCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -429,16 +430,16 @@ const InfiniteCanvas = ({
         ))}
       </div>
 
-      {/* Instructions */}
+      {/* Kebab Menu to be implemented */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+        className="absolute top-4 right-4 z-20 pointer-events-none"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 0.6 }}
       >
         <div className="flex items-center gap-3 px-5 py-2.5 bg-white/5 backdrop-blur-xl rounded-full border border-white/10">
-          <span className="text-white/50 text-xs tracking-[0.2em] uppercase font-light">
-            {isTouchDevice ? "Drag to explore" : "Scroll to explore"}
+          <span className="text-white/50 text-xs tracking-[0.2em] font-light">
+            Portfolio
           </span>
         </div>
       </motion.div>
