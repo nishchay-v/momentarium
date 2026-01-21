@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import InfiniteCanvasWrapper from "@/components/InfiniteCanvasWrapper";
 import GalleryWrapper from "@/components/GalleryWrapper";
-import { useGallery } from "@/components/GalleryProvider";
+import { useGallery, MediaItem } from "@/components/GalleryProvider";
 import { demoItems } from "@/lib/demoData";
 import { Easing, motion } from "framer-motion";
 
@@ -21,17 +22,73 @@ const HEADER_Y_OFFSET = -20;
 // Animate Y offset for header (px)
 const ANIMATE_HEADER_Y_OFFSET = 0;
 
-
 // CANVAS CONFIGURATION
 // Scale factor when hovering over items
 const HOVER_SCALE = 0.97;
 
-function DemoInfiniteCanvasView() {
+function InfiniteCanvasView() {
   const { items: contextItems, currentAlbumName, navigateBack } = useGallery();
+  const [galleryItems, setGalleryItems] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Use context items if we're currently in an album context
+  // Fetch gallery items from API on mount
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await fetch("/api/gallery");
+        if (response.ok) {
+          const data = await response.json();
+          setGalleryItems(data.items);
+        }
+      } catch (error) {
+        console.error("Failed to fetch gallery:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGallery();
+  }, []);
+
+  // Determine which items to display:
+  // 1. If in album context, use context items
+  // 2. If gallery has items from R2, use those
+  // 3. Fall back to demo items
   const displayItems =
-    currentAlbumName && contextItems.length > 0 ? contextItems : demoItems;
+    currentAlbumName && contextItems.length > 0
+      ? contextItems
+      : galleryItems.length > 0
+        ? galleryItems
+        : demoItems;
+
+  // Show loading state only if we don't have any items yet
+  if (isLoading && galleryItems.length === 0 && !currentAlbumName) {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />
+            <div
+              className="absolute inset-0 w-12 h-12 rounded-full border-2 border-transparent border-b-white/30 animate-spin"
+              style={{
+                animationDirection: "reverse",
+                animationDuration: "1.5s",
+              }}
+            />
+          </div>
+          <p className="text-white/40 text-sm tracking-widest uppercase">
+            Loading Gallery
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -102,10 +159,10 @@ function DemoInfiniteCanvasView() {
   );
 }
 
-export default function DemoPage() {
+export default function GalleryPage() {
   return (
     <GalleryWrapper>
-      <DemoInfiniteCanvasView />
+      <InfiniteCanvasView />
     </GalleryWrapper>
   );
 }

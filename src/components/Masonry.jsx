@@ -100,6 +100,9 @@ const Masonry = ({
   hoverScale = 0.95,
   blurToFocus = true,
   colorShiftOnHover = false,
+  selectionMode = false,
+  selectedIds = new Set(),
+  onToggleSelect = null,
 }) => {
   const columns = useMedia(
     [
@@ -259,6 +262,12 @@ const Masonry = ({
   const { openGallery, openAlbum } = useGallery();
 
   const handleItemClick = (clickedItem) => {
+    // Handle selection mode
+    if (selectionMode && onToggleSelect) {
+      onToggleSelect(clickedItem.id);
+      return;
+    }
+
     if (clickedItem.type === "album" && clickedItem.albumItems) {
       // Open album in masonry view
       openAlbum(clickedItem.albumItems, clickedItem.albumName || "Album");
@@ -307,8 +316,37 @@ const Masonry = ({
                 📁 {item.albumName || "Album"} ({item.albumItems?.length || 0})
               </div>
             )}
+            {/* Selection mode indicator */}
+            {selectionMode && (
+              <>
+                {/* Selection overlay */}
+                <div
+                  className={`absolute inset-0 transition-all duration-200 ${
+                    selectedIds.has(item.id)
+                      ? "bg-blue-500/30 ring-4 ring-blue-500 ring-inset"
+                      : "bg-black/10 hover:bg-black/20"
+                  }`}
+                />
+                {/* Checkbox indicator */}
+                <div
+                  className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                    selectedIds.has(item.id)
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : "bg-white/80 border-gray-400"
+                  }`}
+                >
+                  {selectedIds.has(item.id) && (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </>
+            )}
             {/* Hover overlay for better visual feedback */}
-            <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-300" />
+            {!selectionMode && (
+              <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-300" />
+            )}
           </div>
         </div>
       ))}

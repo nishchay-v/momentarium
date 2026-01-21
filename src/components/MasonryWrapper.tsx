@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ComponentProps } from "react";
 import { Loader } from "lucide-react";
+import { MediaItem } from "@/types/media";
 
 // Dynamically import Masonry with SSR disabled
 const Masonry = dynamic(() => import("./Masonry"), {
@@ -14,10 +14,25 @@ const Masonry = dynamic(() => import("./Masonry"), {
   ),
 });
 
+// Extended props interface to include selection mode
+interface MasonryProps {
+  items: MediaItem[];
+  ease?: string;
+  duration?: number;
+  stagger?: number;
+  animateFrom?: "top" | "bottom" | "left" | "right" | "center" | "random";
+  scaleOnHover?: boolean;
+  hoverScale?: number;
+  blurToFocus?: boolean;
+  colorShiftOnHover?: boolean;
+  // Selection mode props
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: ((id: string) => void) | null;
+}
+
 // Type-safe wrapper that passes through all props
-const MasonryWrapper = (
-  props: ComponentProps<typeof import("./Masonry").default>,
-) => {
+const MasonryWrapper = (props: MasonryProps) => {
   return <Masonry {...props} />;
 };
 

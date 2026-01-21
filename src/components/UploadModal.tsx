@@ -8,9 +8,8 @@ import {
   X,
   Image as ImageIcon,
   AlertCircle,
-  ExternalLink,
-  Rocket,
   Check,
+  Rocket,
 } from "lucide-react";
 
 // FILE SIZE CONVERSION
@@ -30,6 +29,7 @@ const CONTENT_HEIGHT_OFFSET = 186;
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPublishSuccess?: () => void;
 }
 
 interface PreviewFile {
@@ -38,22 +38,12 @@ interface PreviewFile {
   id: string;
 }
 
-const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
-  const {
-    addUploadedImages,
-    isUploading,
-    uploadError,
-    uploadedItems,
-    publishImages,
-    isPublishing,
-    publishError,
-    clearUploadedImages,
-  } = useUpload();
+const UploadModal = ({ isOpen, onClose, onPublishSuccess }: UploadModalProps) => {
+  const { publishFiles, isPublishing, publishError } = useUpload();
   const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
-  const [showPublishView, setShowPublishView] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generatePreviewId = () =>
@@ -94,7 +84,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         handleFiles(e.dataTransfer.files);
       }
     },
-    [handleFiles],
+    [handleFiles]
   );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,40 +103,20 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     });
   };
 
-  const handleUpload = async () => {
+  const handlePublish = async () => {
     if (previewFiles.length === 0) return;
 
     const files = previewFiles.map((p) => p.file);
-    await addUploadedImages(files);
-
-    // Clean up previews
-    previewFiles.forEach((p) => URL.revokeObjectURL(p.preview));
-    setPreviewFiles([]);
-    setValidationErrors([]);
-
-    // Transition to publish view instead of closing
-    if (!uploadError) {
-      setShowPublishView(true);
-    }
-  };
-
-  const handlePublish = async () => {
-    if (uploadedItems.length === 0) return;
-
-    setPublishSuccess(null);
-    const result = await publishImages(uploadedItems);
+    const result = await publishFiles(files);
 
     if (result?.success) {
-      setPublishSuccess(result.message);
-      // Clear the uploaded items after successful publish
-      clearUploadedImages();
+      // Clean up previews
+      previewFiles.forEach((p) => URL.revokeObjectURL(p.preview));
+      setPreviewFiles([]);
+      setValidationErrors([]);
+      setPublishSuccess(true);
+      onPublishSuccess?.();
     }
-  };
-
-  const handleCloseAfterPublish = () => {
-    setShowPublishView(false);
-    setPublishSuccess(null);
-    onClose();
   };
 
   const handleClose = () => {
@@ -154,14 +124,8 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     previewFiles.forEach((p) => URL.revokeObjectURL(p.preview));
     setPreviewFiles([]);
     setValidationErrors([]);
-    setShowPublishView(false);
-    setPublishSuccess(null);
+    setPublishSuccess(false);
     onClose();
-  };
-
-  const handleBackToUpload = () => {
-    setShowPublishView(false);
-    setPublishSuccess(null);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -169,7 +133,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     const i = Math.floor(Math.log(bytes) / Math.log(BYTES_PER_KB));
     return (
       parseFloat(
-        (bytes / Math.pow(BYTES_PER_KB, i)).toFixed(FILE_SIZE_DECIMAL_PLACES),
+        (bytes / Math.pow(BYTES_PER_KB, i)).toFixed(FILE_SIZE_DECIMAL_PLACES)
       ) +
       " " +
       FILE_SIZE_UNITS[i]
@@ -193,21 +157,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${showPublishView ? "bg-green-100" : "bg-blue-100"}`}>
-              {showPublishView ? (
-                <Rocket className="w-5 h-5 text-green-600" />
-              ) : (
-                <Upload className="w-5 h-5 text-blue-600" />
-              )}
+            <div className="p-2 rounded-lg bg-blue-100">
+              <Upload className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {showPublishView ? "Publish to Gallery" : "Upload Images"}
+                Upload Images
               </h2>
               <p className="text-sm text-gray-500">
-                {showPublishView
-                  ? "Review and publish images to your gallery"
-                  : "Add images to your gallery"}
+                Add images to your gallery
               </p>
             </div>
           </div>
@@ -226,102 +184,29 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
             maxHeight: `calc(${MODAL_MAX_HEIGHT_VH}vh - ${CONTENT_HEIGHT_OFFSET}px)`,
           }}
         >
-          {/* ===== PUBLISH VIEW ===== */}
-          {showPublishView ? (
-            <>
-              {/* Success Message */}
-              {publishSuccess && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-green-800 font-medium">
-                    <Check className="w-5 h-5" />
-                    {publishSuccess}
-                  </div>
-                  <p className="text-sm text-green-700 mt-1">
-                    Your images have been processed and uploaded to the gallery.
-                  </p>
-                </div>
-              )}
-
-              {/* Publish Error */}
-              {publishError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Publish Error
-                  </div>
-                  <p className="text-sm text-red-700">{publishError}</p>
-                </div>
-              )}
-
-              {/* Images Ready for Publishing */}
-              {uploadedItems.length > 0 && !publishSuccess && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Ready to Publish ({uploadedItems.length} images)
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {uploadedItems.map((item) => (
-                      <div key={item.id} className="relative group">
-                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                          <img
-                            src={item.img}
-                            alt={item.file?.name || "Uploaded image"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-xs font-medium text-gray-900 truncate">
-                            {item.file?.name || "Image"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Publishing Info */}
-                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium mb-2">
-                      What happens when you publish:
-                    </p>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Images are optimized and converted to WebP format</li>
-                      <li>• Thumbnails (480px height) and gallery versions (max 2500px width) are created</li>
-                      <li>• EXIF metadata (date, camera, settings) is extracted</li>
-                      <li>• Images are uploaded to cloud storage (R2)</li>
-                      <li>• Gallery database is updated</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state after successful publish */}
-              {uploadedItems.length === 0 && publishSuccess && (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                    <Check className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    All images published!
-                  </h3>
-                  <p className="text-gray-500">
-                    Your images are now live in the gallery.
-                  </p>
-                </div>
-              )}
-            </>
+          {/* Success State */}
+          {publishSuccess ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Images Published!
+              </h3>
+              <p className="text-gray-500">
+                Your images are now live in the gallery.
+              </p>
+            </div>
           ) : (
-            /* ===== UPLOAD VIEW ===== */
             <>
               {/* Drag and Drop Zone */}
               {previewFiles.length === 0 && (
                 <div
-                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragActive
+                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+                    dragActive
                       ? "border-blue-400 bg-blue-50"
                       : "border-gray-300 hover:border-gray-400"
-                    }`}
+                  }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -374,14 +259,14 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                 </div>
               )}
 
-              {/* Upload Error */}
-              {uploadError && (
+              {/* Publish Error */}
+              {publishError && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                     <AlertCircle className="w-4 h-4" />
-                    Upload Error
+                    Publish Error
                   </div>
-                  <p className="text-sm text-red-700">{uploadError}</p>
+                  <p className="text-sm text-red-700">{publishError}</p>
                 </div>
               )}
 
@@ -428,6 +313,19 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                       </div>
                     ))}
                   </div>
+
+                  {/* Publishing Info */}
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium mb-2">
+                      What happens when you publish:
+                    </p>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Images are optimized and converted to WebP format</li>
+                      <li>• Thumbnails (480px height) and gallery versions (max 2500px width) are created</li>
+                      <li>• EXIF metadata (date, camera, settings) is extracted</li>
+                      <li>• Images are uploaded to cloud storage (R2)</li>
+                    </ul>
+                  </div>
                 </div>
               )}
             </>
@@ -437,59 +335,22 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
           <div className="text-sm text-gray-500">
-            {showPublishView ? (
-              uploadedItems.length > 0 && !publishSuccess ? (
-                <span>
-                  {uploadedItems.length} image{uploadedItems.length !== 1 ? "s" : ""} ready to publish
-                </span>
-              ) : null
-            ) : (
-              previewFiles.length > 0 && (
-                <span>
-                  {previewFiles.length} file{previewFiles.length !== 1 ? "s" : ""} selected
-                </span>
-              )
+            {!publishSuccess && previewFiles.length > 0 && (
+              <span>
+                {previewFiles.length} file{previewFiles.length !== 1 ? "s" : ""}{" "}
+                selected
+              </span>
             )}
           </div>
           <div className="flex items-center gap-3">
-            {showPublishView ? (
-              <>
-                {publishSuccess ? (
-                  <button
-                    onClick={handleCloseAfterPublish}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    Done
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleBackToUpload}
-                      className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-                    >
-                      Add More Images
-                    </button>
-                    <button
-                      onClick={handlePublish}
-                      disabled={uploadedItems.length === 0 || isPublishing}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                    >
-                      {isPublishing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Publishing...
-                        </>
-                      ) : (
-                        <>
-                          <Rocket className="w-4 h-4" />
-                          Publish to Gallery
-                        </>
-                      )}
-                    </button>
-                  </>
-                )}
-              </>
+            {publishSuccess ? (
+              <button
+                onClick={handleClose}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Done
+              </button>
             ) : (
               <>
                 <button
@@ -499,19 +360,19 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleUpload}
-                  disabled={previewFiles.length === 0 || isUploading}
+                  onClick={handlePublish}
+                  disabled={previewFiles.length === 0 || isPublishing}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
-                  {isUploading ? (
+                  {isPublishing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Processing...
+                      Publishing...
                     </>
                   ) : (
                     <>
-                      <Upload className="w-4 h-4" />
-                      Continue to Publish
+                      <Rocket className="w-4 h-4" />
+                      Publish to Gallery
                     </>
                   )}
                 </button>

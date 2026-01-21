@@ -1,6 +1,7 @@
 import {
   S3Client,
   PutObjectCommand,
+  DeleteObjectCommand,
   type PutObjectCommandInput,
 } from "@aws-sdk/client-s3";
 
@@ -95,4 +96,31 @@ export function generateR2Keys(
     thumb: `thumbs/${imageId}.${extension}`,
     gallery: `gallery/${imageId}.${extension}`,
   };
+}
+
+/**
+ * Delete a single object from R2
+ */
+export async function deleteFromR2(key: string): Promise<void> {
+  const bucketName = process.env.R2_BUCKET_NAME;
+
+  if (!bucketName) {
+    throw new Error("Missing R2_BUCKET_NAME environment variable.");
+  }
+
+  const client = getR2Client();
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    })
+  );
+}
+
+/**
+ * Delete multiple objects from R2 in parallel
+ */
+export async function deleteMultipleFromR2(keys: string[]): Promise<void> {
+  await Promise.all(keys.map((key) => deleteFromR2(key)));
 }
