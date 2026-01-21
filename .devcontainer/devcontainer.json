@@ -18,6 +18,6 @@
     // Performance: Keep node_modules in a Docker volume, not synced to Mac
     "source=momentarium-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
-  "forwardPorts": [3000],
+  "forwardPorts": [9000],
   "postCreateCommand": "npm install"
 }

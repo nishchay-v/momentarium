@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-01-21T10:52:02.480Z",
+  "items": [
+    {
+      "id": "97eefcd8-19cb-4123-b1d6-55fff02a19af",
+      "r2Keys": {
+        "thumb": "thumbs/97eefcd8-19cb-4123-b1d6-55fff02a19af.webp",
+        "gallery": "gallery/97eefcd8-19cb-4123-b1d6-55fff02a19af.webp"
+      },
+      "metadata": {
+        "dateTaken": "2022-03-31T02:55:49.000Z",
+        "cameraModel": "X-E2",
+        "cameraMake": "FUJIFILM",
+        "iso": 1600,
+        "fStop": 2.5,
+        "exposureTime": "1/60",
+        "focalLength": 35,
+        "width": 3264,
+        "height": 4080
+      },
+      "uploadDate": "2026-01-21T10:51:50.069Z",
+      "originalFilename": "DSCF5463.jpg"
+    },
+    {
+      "id": "bc1fc4da-4481-4b4e-b6e6-5d2e7d54ba08",
+      "r2Keys": {
+        "thumb": "thumbs/bc1fc4da-4481-4b4e-b6e6-5d2e7d54ba08.webp",
+        "gallery": "gallery/bc1fc4da-4481-4b4e-b6e6-5d2e7d54ba08.webp"
+      },
+      "metadata": {
+        "dateTaken": "2022-03-31T02:58:36.000Z",
+        "cameraModel": "X-E2",
+        "cameraMake": "FUJIFILM",
+        "iso": 1600,
+        "fStop": 3.2,
+        "exposureTime": "1/60",
+        "focalLength": 35,
+        "width": 3020,
+        "height": 3775
+      },
+      "uploadDate": "2026-01-21T10:51:52.087Z",
+      "originalFilename": "DSCF5467.jpg"
+    },
+    {
+      "id": "bf649432-9982-458a-acd8-46f7e01f15bf",
+      "r2Keys": {
+        "thumb": "thumbs/bf649432-9982-458a-acd8-46f7e01f15bf.webp",
+        "gallery": "gallery/bf649432-9982-458a-acd8-46f7e01f15bf.webp"
+      },
+      "metadata": {
+        "dateTaken": "2022-03-31T03:40:01.000Z",
+        "cameraModel": "X-E2",
+        "cameraMake": "FUJIFILM",
+        "iso": 1600,
+        "fStop": 3.2,
+        "exposureTime": "1/60",
+        "focalLength": 35,
+        "width": 3114,
+        "height": 3892
+      },
+      "uploadDate": "2026-01-21T10:51:55.915Z",
+      "originalFilename": "DSCF5475.jpg"
+    },
+    {
+      "id": "5c59477c-93d8-4aa4-8130-0b9d16119391",
+      "r2Keys": {
+        "thumb": "thumbs/5c59477c-93d8-4aa4-8130-0b9d16119391.webp",
+        "gallery": "gallery/5c59477c-93d8-4aa4-8130-0b9d16119391.webp"
+      },
+      "metadata": {
+        "dateTaken": "2022-03-31T04:09:38.000Z",
+        "cameraModel": "X-E2",
+        "cameraMake": "FUJIFILM",
+        "iso": 1600,
+        "fStop": 2,
+        "exposureTime": "1/60",
+        "focalLength": 35,
+        "width": 3254,
+        "height": 4068
+      },
+      "uploadDate": "2026-01-21T10:51:58.683Z",
+      "originalFilename": "DSCF5482.jpg"
+    },
+    {
+      "id": "114f132e-de0e-4934-9a35-087563714d90",
+      "r2Keys": {
+        "thumb": "thumbs/114f132e-de0e-4934-9a35-087563714d90.webp",
+        "gallery": "gallery/114f132e-de0e-4934-9a35-087563714d90.webp"
+      },
+      "metadata": {
+        "dateTaken": "2022-03-31T04:11:25.000Z",
+        "cameraModel": "X-E2",
+        "cameraMake": "FUJIFILM",
+        "iso": 1600,
+        "fStop": 2,
+        "exposureTime": "1/125",
+        "focalLength": 35,
+        "width": 3051,
+        "height": 3814
+      },
+      "uploadDate": "2026-01-21T10:52:02.475Z",
+      "originalFilename": "DSCF5485.jpg"
+    }
+  ]
+}
