@@ -21,18 +21,12 @@ const COLUMNS_XS = 1;
 // LAYOUT CONFIGURATION
 // Gap between masonry items (px)
 const GAP = 16;
-// Height multiplier for items (divides original height)
-const HEIGHT_MULTIPLIER = 2;
 // Bottom padding for container (px)
 const CONTAINER_BOTTOM_PADDING = 16;
 
 // ANIMATION CONFIGURATION
-// Default animation duration (seconds)
-const DEFAULT_DURATION = 0.6;
 // Initial mount animation duration (seconds)
 const INITIAL_ANIMATION_DURATION = 0.8;
-// Stagger delay between items (seconds)
-const DEFAULT_STAGGER = 0.05;
 // Hover animation duration (seconds)
 const HOVER_ANIMATION_DURATION = 0.3;
 // Initial blur amount for blur-to-focus effect (px)
@@ -161,7 +155,8 @@ const Masonry = ({
     return items.map((child) => {
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = col * (columnWidth + GAP);
-      const height = child.height / HEIGHT_MULTIPLIER;
+      const heightMultiplier = columnWidth / child.width;
+      const height = child.height * heightMultiplier;
       const y = colHeights[col];
 
       colHeights[col] += height + GAP;
