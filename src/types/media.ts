@@ -49,6 +49,7 @@ export interface MediaItem {
   img: string;
   url?: string;
   height: number;
+  width: number;
   type?: "image" | "album";
   albumItems?: MediaItem[];
   albumName?: string;

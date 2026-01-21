@@ -22,6 +22,7 @@ function galleryItemToMediaItem(item: GalleryItem): MediaItem {
     img: thumbUrl,
     url: galleryUrl,
     height: item.metadata.height || 400,
+    width: item.metadata.width || 400,
     type: "image",
     isPublished: true,
     r2Keys: item.r2Keys,

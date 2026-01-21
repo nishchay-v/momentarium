@@ -35,7 +35,6 @@ const MIN_ITEM_HEIGHT = 240;
 const MAX_ITEM_HEIGHT = 600;
 const EDGE_SCALE_FACTOR = 0.15;
 const EDGE_OPACITY_FACTOR = 0.2;
-const HEIGHT_MULTIPLIER = 0.8;
 const EDGE_Z_OFFSET = 80;
 const PERSPECTIVE_DEPTH = 1000;
 
@@ -94,62 +93,62 @@ const GridItemComponent = ({
   const innerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-useAnimationFrame(() => {
-  if (!ref.current || totalWidth === 0 || totalHeight === 0) return;
+  useAnimationFrame(() => {
+    if (!ref.current || totalWidth === 0 || totalHeight === 0) return;
 
-  const currentX = scrollX.get();
-  const currentY = scrollY.get();
+    const currentX = scrollX.get();
+    const currentY = scrollY.get();
 
-  // 1. Calculate raw position based on scroll (forces value between 0 and totalWidth)
-  let wrappedX = mod(item.x + currentX, totalWidth);
-  let wrappedY = mod(item.y + currentY, totalHeight);
+    // 1. Calculate raw position based on scroll (forces value between 0 and totalWidth)
+    let wrappedX = mod(item.x + currentX, totalWidth);
+    let wrappedY = mod(item.y + currentY, totalHeight);
 
-  // 2. Smart Wrap Logic 
-  // "If we shift this item to the left/top by subtracting totalWidth, is it visible?"
-  
-  // Check X axis
-  const shiftX = wrappedX - totalWidth;
-  if (wrappedX > viewportSize.width && shiftX > -(item.w + VISIBILITY_BUFFER)) {
-    wrappedX -= totalWidth;
-  }
+    // 2. Smart Wrap Logic 
+    // "If we shift this item to the left/top by subtracting totalWidth, is it visible?"
 
-  // Check Y axis
-  const shiftY = wrappedY - totalHeight;
-  if (wrappedY > viewportSize.height && shiftY > -(item.h + VISIBILITY_BUFFER)) {
-    wrappedY -= totalHeight;
-  }
-
-  // 3. Calculate Parallax/Edge Effects
-  const centerX = wrappedX + item.w / 2;
-  const centerY = wrappedY + item.h / 2;
-  
-  const distX = Math.abs(centerX - viewportSize.width / 2) / (viewportSize.width / 2);
-  const distY = Math.abs(centerY - viewportSize.height / 2) / (viewportSize.height / 2);
-  
-  const edgeFactor = Math.min(Math.max(distX, distY), 1); 
-
-  const visible = 
-    wrappedX + item.w > -VISIBILITY_BUFFER &&
-    wrappedX < viewportSize.width + VISIBILITY_BUFFER &&
-    wrappedY + item.h > -VISIBILITY_BUFFER &&
-    wrappedY < viewportSize.height + VISIBILITY_BUFFER;
-
-  if (visible) {
-    const zOffset = edgeFactor * EDGE_Z_OFFSET;
-    const scale = 1 - edgeFactor * EDGE_SCALE_FACTOR;
-    const opacity = 1 - edgeFactor * EDGE_OPACITY_FACTOR;
-
-    ref.current.style.transform = `translate3d(${wrappedX}px, ${wrappedY}px, ${-zOffset}px)`;
-    ref.current.style.display = 'block'; 
-    
-    if (innerRef.current) {
-      innerRef.current.style.transform = `scale(${scale})`;
-      innerRef.current.style.opacity = String(opacity);
+    // Check X axis
+    const shiftX = wrappedX - totalWidth;
+    if (wrappedX > viewportSize.width && shiftX > -(item.w + VISIBILITY_BUFFER)) {
+      wrappedX -= totalWidth;
     }
-  } else {
-    ref.current.style.display = 'none';
-  }
-});
+
+    // Check Y axis
+    const shiftY = wrappedY - totalHeight;
+    if (wrappedY > viewportSize.height && shiftY > -(item.h + VISIBILITY_BUFFER)) {
+      wrappedY -= totalHeight;
+    }
+
+    // 3. Calculate Parallax/Edge Effects
+    const centerX = wrappedX + item.w / 2;
+    const centerY = wrappedY + item.h / 2;
+
+    const distX = Math.abs(centerX - viewportSize.width / 2) / (viewportSize.width / 2);
+    const distY = Math.abs(centerY - viewportSize.height / 2) / (viewportSize.height / 2);
+
+    const edgeFactor = Math.min(Math.max(distX, distY), 1);
+
+    const visible =
+      wrappedX + item.w > -VISIBILITY_BUFFER &&
+      wrappedX < viewportSize.width + VISIBILITY_BUFFER &&
+      wrappedY + item.h > -VISIBILITY_BUFFER &&
+      wrappedY < viewportSize.height + VISIBILITY_BUFFER;
+
+    if (visible) {
+      const zOffset = edgeFactor * EDGE_Z_OFFSET;
+      const scale = 1 - edgeFactor * EDGE_SCALE_FACTOR;
+      const opacity = 1 - edgeFactor * EDGE_OPACITY_FACTOR;
+
+      ref.current.style.transform = `translate3d(${wrappedX}px, ${wrappedY}px, ${-zOffset}px)`;
+      ref.current.style.display = 'block';
+
+      if (innerRef.current) {
+        innerRef.current.style.transform = `scale(${scale})`;
+        innerRef.current.style.opacity = String(opacity);
+      }
+    } else {
+      ref.current.style.display = 'none';
+    }
+  });
 
   return (
     <div
@@ -173,48 +172,48 @@ useAnimationFrame(() => {
         }}
       >
         {/* Inner Scale wrapper for Hover Effect */}
-        <div 
+        <div
           className="w-full h-full transition-transform duration-500 ease-out"
           style={{ transform: isHovered ? `scale(${hoverScale})` : "scale(1)" }}
         >
-            {/* Image */}
-            <div
+          {/* Image */}
+          <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out"
             style={{
-                backgroundImage: `url(${item.img})`,
-                transform: isHovered ? "scale(1.05)" : "scale(1)",
+              backgroundImage: `url(${item.img})`,
+              transform: isHovered ? "scale(1.05)" : "scale(1)",
             }}
-            />
+          />
 
-            {/* Overlay */}
-            <div
+          {/* Overlay */}
+          <div
             className="absolute inset-0 transition-opacity duration-300"
             style={{
-                background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)",
-                opacity: isHovered ? 0.3 : 0.6,
+              background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)",
+              opacity: isHovered ? 0.3 : 0.6,
             }}
-            />
+          />
 
-            {/* Hover Glow */}
-            <div
+          {/* Hover Glow */}
+          <div
             className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
             style={{
-                boxShadow: isHovered
+              boxShadow: isHovered
                 ? "inset 0 0 50px rgba(255,255,255,0.1), 0 20px 60px -20px rgba(0,0,0,0.5)"
                 : "none",
-                opacity: isHovered ? 1 : 0,
+              opacity: isHovered ? 1 : 0,
             }}
-            />
+          />
 
-            {/* Album Badge */}
-            {item.type === "album" && (
+          {/* Album Badge */}
+          {item.type === "album" && (
             <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/90 px-3 py-1.5 rounded-full text-xs font-medium tracking-wide">
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                </svg>
-                {item.albumName || "Album"} · {item.albumItems?.length || 0}
+              </svg>
+              {item.albumName || "Album"} · {item.albumItems?.length || 0}
             </div>
-            )}
+          )}
         </div>
       </div>
     </div>
@@ -238,7 +237,7 @@ const InfiniteCanvas = ({
   const rawScrollY = useMotionValue(0);
   const scrollX = useSpring(rawScrollX, SPRING_CONFIG);
   const scrollY = useSpring(rawScrollY, SPRING_CONFIG);
-  
+
   // Interaction Refs
   const velocityX = useRef(0);
   const velocityY = useRef(0);
@@ -265,14 +264,14 @@ const InfiniteCanvas = ({
 
   // Preload
   useEffect(() => {
-    if(!items.length) return;
+    if (!items.length) return;
     preloadImages(items.map((i) => i.img)).then(() => {
       setImagesReady(true);
       setTimeout(() => setIsInitialized(true), 100);
     });
   }, [items]);
 
-// --- LAYOUT GENERATION ---
+  // --- LAYOUT GENERATION ---
   // Calculates the grid ONCE.
   // Now creates a grid layout that mirrors the viewport's aspect ratio.
   const { gridItems, totalWidth, totalHeight } = useMemo(() => {
@@ -299,7 +298,7 @@ const InfiniteCanvas = ({
     // 2. Determine "Virtual" Grid Dimensions
     // Calculate columns needed to match viewport Aspect Ratio (Width / Height)
     const viewportAspectRatio = w / h;
-    
+
     // Formula: cols = sqrt(N * ratio)
     // This creates a grid shape that roughly matches the screen shape
     const rawIdealCols = Math.sqrt(items.length * viewportAspectRatio);
@@ -319,9 +318,10 @@ const InfiniteCanvas = ({
       const y = colHeights[colIndex];
 
       // Randomize height slightly for visual interest
+      const heightMultiplier = columnWidth / child.width;
       const baseHeight = child.height || DEFAULT_ITEM_HEIGHT;
       const height = Math.min(
-        Math.max(baseHeight * HEIGHT_MULTIPLIER, MIN_ITEM_HEIGHT),
+        Math.max(baseHeight * heightMultiplier, MIN_ITEM_HEIGHT),
         MAX_ITEM_HEIGHT
       );
 
@@ -399,10 +399,10 @@ const InfiniteCanvas = ({
       animate={{ opacity: isInitialized ? 1 : 0 }}
       transition={{ duration: INITIAL_ANIMATION_DURATION }}
     >
-        {/* Background Gradients/Vignette */}
+      {/* Background Gradients/Vignette */}
       <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(transparent_30%,rgba(0,0,0,0.6)_100%)]" />
       <div className="absolute top-0 left-0 w-64 h-64 pointer-events-none z-10 opacity-30 bg-[radial-gradient(circle_at_top_left,rgba(100,100,255,0.1),transparent_70%)]" />
-      
+
       {/* 3D Container */}
       <div className="absolute inset-0 preserve-3d">
         {gridItems.map((item) => (
@@ -415,13 +415,13 @@ const InfiniteCanvas = ({
             totalHeight={totalHeight}
             viewportSize={viewportSize}
             onItemClick={(item) => {
-               // Map back to original dataset index
-               const index = items.findIndex(i => i.id === item.originalId);
-               if(item.type === "album" && item.albumItems) {
-                   openAlbum(item.albumItems, item.albumName || "Album");
-               } else {
-                   openGallery(items, index);
-               }
+              // Map back to original dataset index
+              const index = items.findIndex(i => i.id === item.originalId);
+              if (item.type === "album" && item.albumItems) {
+                openAlbum(item.albumItems, item.albumName || "Album");
+              } else {
+                openGallery(items, index);
+              }
             }}
             scaleOnHover={scaleOnHover}
             hoverScale={hoverScale}
