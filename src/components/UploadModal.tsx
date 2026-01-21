@@ -12,7 +12,6 @@ import {
   Rocket,
   Check,
 } from "lucide-react";
-import Link from "next/link";
 
 // FILE SIZE CONVERSION
 // Bytes per kilobyte (for file size formatting)
@@ -40,9 +39,9 @@ interface PreviewFile {
 }
 
 const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
-  const { 
-    addUploadedImages, 
-    isUploading, 
+  const {
+    addUploadedImages,
+    isUploading,
     uploadError,
     uploadedItems,
     publishImages,
@@ -206,8 +205,8 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                 {showPublishView ? "Publish to Gallery" : "Upload Images"}
               </h2>
               <p className="text-sm text-gray-500">
-                {showPublishView 
-                  ? "Review and publish images to your gallery" 
+                {showPublishView
+                  ? "Review and publish images to your gallery"
                   : "Add images to your gallery"}
               </p>
             </div>
@@ -319,11 +318,10 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
               {/* Drag and Drop Zone */}
               {previewFiles.length === 0 && (
                 <div
-                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
-                    dragActive
+                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragActive
                       ? "border-blue-400 bg-blue-50"
                       : "border-gray-300 hover:border-gray-400"
-                  }`}
+                    }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -432,27 +430,6 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                   </div>
                 </div>
               )}
-
-              {/* Demo Link */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Want to see the gallery in action?
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Check out our demo with sample images
-                    </p>
-                  </div>
-                  <Link
-                    href="/demo"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View Demo
-                  </Link>
-                </div>
-              </div>
             </>
           )}
         </div>

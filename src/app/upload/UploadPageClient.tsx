@@ -8,7 +8,6 @@ import { UploadProvider, useUpload } from "@/components/UploadProvider";
 import { useGallery } from "@/components/GalleryProvider";
 import { useState } from "react";
 import { Upload, Image as ImageIcon, Plus } from "lucide-react";
-import Link from "next/link";
 
 // MASONRY ANIMATION CONFIGURATION
 // Animation duration for masonry items (seconds)
@@ -65,13 +64,6 @@ function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
           <Upload className="w-5 h-5" />
           Upload Images
         </button>
-        <Link
-          href="/demo"
-          className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-        >
-          <ImageIcon className="w-5 h-5" />
-          View Demo Gallery
-        </Link>
       </div>
     </div>
   );
