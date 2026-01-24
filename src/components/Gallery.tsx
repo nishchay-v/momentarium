@@ -5,6 +5,13 @@ import { gsap } from "gsap";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { isImageCached } from "@/lib/imageCache";
 import { MediaItem } from "./GalleryProvider";
+import Image from "next/image";
+
+/**
+ * Get the gallery (full-size) URL for a media item.
+ * Falls back to thumbnail if no gallery URL is available.
+ */
+const getGalleryUrl = (item: MediaItem): string => item.url || item.img;
 
 // ANIMATION CONFIGURATION
 // Gallery overlay fade-in duration
@@ -50,10 +57,15 @@ const Gallery = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [loadedIndex, setLoadedIndex] = useState<number>(-1);
+  // Track which image URL has been loaded (use URL instead of index for reliability)
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
 
   const currentItem = items[currentIndex];
-  const isCached = currentItem ? isImageCached(currentItem.img) : false;
+  const currentUrl = currentItem ? getGalleryUrl(currentItem) : null;
+  // Check if the gallery (full-size) image is cached
+  const isCached = currentUrl ? isImageCached(currentUrl) : false;
+  // Image is considered loaded if the loadedUrl matches current image
+  const isLoaded = loadedUrl === currentUrl;
 
   const handlePrevious = useCallback(() => {
     if (items.length <= 1) return;
@@ -116,14 +128,16 @@ const Gallery = ({
     };
   }, [isOpen]);
 
-  // Reset loaded state when index changes
+  // Reset loaded state when URL changes
   useEffect(() => {
-    setLoadedIndex(-1);
-  }, [currentIndex]);
+    if (currentUrl && loadedUrl !== currentUrl) {
+      setLoadedUrl(null);
+    }
+  }, [currentUrl, loadedUrl]);
 
   // Animate image when it loads
   useEffect(() => {
-    if (!imageRef.current || loadedIndex !== currentIndex) return;
+    if (!imageRef.current || !isLoaded) return;
 
     // Faster animation for cached images
     const duration = isCached
@@ -135,11 +149,13 @@ const Gallery = ({
       { opacity: 0, scale: INITIAL_IMAGE_SCALE },
       { opacity: 1, scale: FINAL_IMAGE_SCALE, duration, ease: "power2.out" },
     );
-  }, [loadedIndex, currentIndex, isCached]);
+  }, [isLoaded, isCached]);
 
-  const handleImageLoad = () => {
-    setLoadedIndex(currentIndex);
-  };
+  const handleImageLoad = useCallback(() => {
+    if (currentUrl) {
+      setLoadedUrl(currentUrl);
+    }
+  }, [currentUrl]);
 
   // Touch handlers for mobile swipe
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -225,19 +241,21 @@ const Gallery = ({
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative h-100 max-w-full max-h-full flex items-center justify-center">
-          {loadedIndex !== currentIndex && (
+          {!isLoaded && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             </div>
           )}
-          <img
+          <Image
             key={currentItem.id}
             ref={imageRef}
-            src={currentItem.img}
+            src={getGalleryUrl(currentItem)}
             alt={`Gallery image ${currentIndex + 1}`}
             className="max-w-full max-h-full object-contain shadow-2xl"
             onLoad={handleImageLoad}
             style={{ opacity: 0 }}
+            width={currentItem.width}
+            height={currentItem.height}
           />
         </div>
       </div>
@@ -245,7 +263,7 @@ const Gallery = ({
       {/* Thumbnail strip */}
       {items.length > 1 && (
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex gap-2 max-w-full overflow-x-auto px-4 pb-2">
-          {items.map((item, index) => (
+          {items.map((item: MediaItem, index: number) => (
             <button
               key={item.id}
               onClick={(e) => {
@@ -260,11 +278,13 @@ const Gallery = ({
                   : "border-white/30 hover:border-white/60"
               }`}
             >
-              <img
+              <Image
                 src={item.img}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                width={item.width}
+                height={item.height}
               />
             </button>
           ))}

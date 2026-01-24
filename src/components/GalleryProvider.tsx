@@ -5,27 +5,36 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
+  useCallback,
   ReactNode,
 } from "react";
-import { preloadImages } from "@/lib/imageCache";
+import { preloadImage, isImageCached } from "@/lib/imageCache";
 import { MediaItem } from "@/types/media";
 
 // Re-export MediaItem for backward compatibility
 export type { MediaItem } from "@/types/media";
 
+/**
+ * Get the gallery (full-size) URL for a media item.
+ * Falls back to thumbnail if no gallery URL is available.
+ */
+const getGalleryUrl = (item: MediaItem): string => item.url || item.img;
+
 // IMAGE PRELOADING CONFIGURATION
-// Number of images to preload on each side of current image
-const PRELOAD_RANGE = 2;
-// Delay before preloading remaining images (ms)
-const PRELOAD_DELAY = 100;
+// Number of adjacent images to preload (on each side of current)
+const ADJACENT_PRELOAD_COUNT = 1;
+// Delay before starting background preload (ms)
+const BACKGROUND_PRELOAD_DELAY = 500;
 // Delay before clearing gallery items after close (ms) - allows exit animation
 const GALLERY_CLOSE_DELAY = 300;
+// Stagger delay between images (ms)
+const IMAGE_STAGGER_DELAY = 100;
 
 interface GalleryContextType {
   items: MediaItem[];
   currentIndex: number;
   isOpen: boolean;
-  imagesPreloaded: boolean;
   navigationStack: MediaItem[][];
   currentAlbumName: string | null;
   // Gallery actions
@@ -54,105 +63,100 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [imagesPreloaded, setImagesPreloaded] = useState(false);
   const [navigationStack, setNavigationStack] = useState<MediaItem[][]>([]);
   const [currentAlbumName, setCurrentAlbumName] = useState<string | null>(null);
+  
+  // Track preload timeouts to cancel on unmount/close
+  const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Preload remaining images in background when gallery opens
-  useEffect(() => {
-    if (isOpen && items.length > 0 && imagesPreloaded) {
-      const remainingUrls = items
-        .filter((item, index) => {
-          const distance = Math.min(
-            Math.abs(index - currentIndex),
-            items.length - Math.abs(index - currentIndex),
-          );
-          return distance > PRELOAD_RANGE;
-        })
-        .map((item) => item.img);
+  /**
+   * Lazily preload adjacent images (non-blocking, runs in background)
+   * Only preloads images not already in cache
+   */
+  const preloadAdjacentImages = useCallback((galleryItems: MediaItem[], centerIndex: number) => {
+    // Clear any pending preload
+    if (preloadTimeoutRef.current) {
+      clearTimeout(preloadTimeoutRef.current);
+    }
 
-      if (remainingUrls.length > 0) {
+    preloadTimeoutRef.current = setTimeout(() => {
+      const urlsToPreload: string[] = [];
+      
+      // Preload ADJACENT_PRELOAD_COUNT images on each side
+      for (let offset = 1; offset <= ADJACENT_PRELOAD_COUNT; offset++) {
+        // Next image
+        const nextIndex = (centerIndex + offset) % galleryItems.length;
+        const nextUrl = getGalleryUrl(galleryItems[nextIndex]);
+        if (!isImageCached(nextUrl)) {
+          urlsToPreload.push(nextUrl);
+        }
+        
+        // Previous image
+        const prevIndex = (centerIndex - offset + galleryItems.length) % galleryItems.length;
+        const prevUrl = getGalleryUrl(galleryItems[prevIndex]);
+        if (!isImageCached(prevUrl)) {
+          urlsToPreload.push(prevUrl);
+        }
+      }
+
+      // Preload sequentially to avoid overwhelming the network
+      urlsToPreload.forEach((url, i) => {
         setTimeout(() => {
-          preloadImages(remainingUrls);
-        }, PRELOAD_DELAY);
-      }
-    }
-  }, [isOpen, items, currentIndex, imagesPreloaded]);
+          preloadImage(url);
+        }, i * IMAGE_STAGGER_DELAY);
+      });
+    }, BACKGROUND_PRELOAD_DELAY);
+  }, []);
 
-  // Preload adjacent images when navigating
+  // Cleanup timeout on unmount
   useEffect(() => {
-    if (!isOpen || !imagesPreloaded) return;
-
-    const adjacentUrls: string[] = [];
-
-    for (let i = -PRELOAD_RANGE; i <= PRELOAD_RANGE; i++) {
-      const index = (currentIndex + i + items.length) % items.length;
-      if (items[index]?.img) {
-        adjacentUrls.push(items[index].img);
+    return () => {
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current);
       }
-    }
+    };
+  }, []);
 
-    if (adjacentUrls.length > 0) {
-      preloadImages(adjacentUrls);
+  // Preload adjacent images when index changes (lazy, non-blocking)
+  useEffect(() => {
+    if (isOpen && items.length > 1) {
+      preloadAdjacentImages(items, currentIndex);
     }
-  }, [currentIndex, isOpen, imagesPreloaded, items]);
+  }, [currentIndex, isOpen, items, preloadAdjacentImages]);
 
-  const openGallery = async (galleryItems: MediaItem[], startIndex: number) => {
-    // Preload current image BEFORE opening gallery
-    const currentImg = galleryItems[startIndex]?.img;
-    if (currentImg) {
-      await preloadImages([currentImg]);
-    }
-
+  const openGallery = (galleryItems: MediaItem[], startIndex: number) => {
+    // Open gallery immediately - don't block on preloading
     setItems(galleryItems);
     setCurrentIndex(startIndex);
     setIsOpen(true);
-    setImagesPreloaded(true);
 
-    // Preload adjacent images immediately in background
-    const adjacentUrls: string[] = [];
-
-    for (let i = -PRELOAD_RANGE; i <= PRELOAD_RANGE; i++) {
-      if (i === 0) continue;
-      const index =
-        (startIndex + i + galleryItems.length) % galleryItems.length;
-      if (galleryItems[index]?.img) {
-        adjacentUrls.push(galleryItems[index].img);
-      }
-    }
-
-    if (adjacentUrls.length > 0) {
-      preloadImages(adjacentUrls);
-    }
+    // Start lazy preloading of adjacent images in background
+    preloadAdjacentImages(galleryItems, startIndex);
   };
 
   const closeGallery = () => {
     setIsOpen(false);
+    
+    // Cancel any pending preloads
+    if (preloadTimeoutRef.current) {
+      clearTimeout(preloadTimeoutRef.current);
+      preloadTimeoutRef.current = null;
+    }
+
     // Delay clearing items to allow for exit animation
-    // Only clear items if we're not in an album context
     setTimeout(() => {
       if (!currentAlbumName) {
-        // Only clear if we're not viewing an album
         setItems([]);
         setCurrentIndex(0);
-        setImagesPreloaded(false);
       } else {
-        // If in album, just reset index and preload state but keep items
         setCurrentIndex(0);
-        setImagesPreloaded(false);
       }
     }, GALLERY_CLOSE_DELAY);
   };
 
-  const navigateToIndex = async (index: number) => {
-    // Preload next image before navigating for instant display
-    const nextImg = items[index]?.img;
-    if (nextImg) {
-      await preloadImages([nextImg]);
-    }
-
+  const navigateToIndex = (index: number) => {
+    // Navigate immediately - don't block on preloading
     setCurrentIndex(index);
-    setImagesPreloaded(true);
   };
 
   const openAlbum = (albumItems: MediaItem[], albumName: string) => {
@@ -176,7 +180,6 @@ export const GalleryProvider = ({ children }: GalleryProviderProps) => {
     items,
     currentIndex,
     isOpen,
-    imagesPreloaded,
     navigationStack,
     currentAlbumName,
     // Gallery actions
