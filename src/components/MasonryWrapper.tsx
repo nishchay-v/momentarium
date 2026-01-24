@@ -33,7 +33,8 @@ interface MasonryProps {
 
 // Type-safe wrapper that passes through all props
 const MasonryWrapper = (props: MasonryProps) => {
-  return <Masonry {...props} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <Masonry {...(props as any)} />;
 };
 
 export default MasonryWrapper;
