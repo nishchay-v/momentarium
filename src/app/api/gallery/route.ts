@@ -6,12 +6,7 @@ import type { MediaItem, GalleryItem } from "@/types/media";
  * Transform a GalleryItem from the database to a MediaItem for the frontend
  */
 function galleryItemToMediaItem(item: GalleryItem): MediaItem {
-  const publicUrl = process.env.R2_PUBLIC_URL;
-  
-  if (!publicUrl) {
-    throw new Error("R2_PUBLIC_URL environment variable is not set");
-  }
-
+  const publicUrl = process.env.R2_PUBLIC_URL || "https://assets.nishchay.dpdns.org";
   // Use thumbnail for the masonry/grid display
   const thumbUrl = `${publicUrl}/${item.r2Keys.thumb}`;
   // Use gallery version for full view
