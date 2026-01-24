@@ -90,6 +90,7 @@ export const fileToMediaItem = async (file: File): Promise<MediaItem> => {
       img: base64Url,
       type: "image",
       height: Math.round(displayHeight),
+      width: Math.round(STANDARD_MASONRY_WIDTH),
       isUploaded: true,
       file: file, // Keep reference for potential future use
     };
