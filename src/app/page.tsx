@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import InfiniteCanvasWrapper from "@/components/InfiniteCanvasWrapper";
 import GalleryWrapper from "@/components/GalleryWrapper";
 import { useGallery, MediaItem } from "@/components/GalleryProvider";
-import { demoItems } from "@/lib/demoData";
 import { Easing, motion } from "framer-motion";
 
 // ANIMATION CONFIGURATION
@@ -53,13 +52,12 @@ function InfiniteCanvasView() {
   // Determine which items to display:
   // 1. If in album context, use context items
   // 2. If gallery has items from R2, use those
-  // 3. Fall back to demo items
   const displayItems =
     currentAlbumName && contextItems.length > 0
       ? contextItems
       : galleryItems.length > 0
         ? galleryItems
-        : demoItems;
+        : [];
 
   // Show loading state only if we don't have any items yet
   if (isLoading && galleryItems.length === 0 && !currentAlbumName) {
