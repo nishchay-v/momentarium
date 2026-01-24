@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       new URL(
-        process.env
+        process.env.R2_PUBLIC_URL
           ? `${process.env.R2_PUBLIC_URL}/**`
           : "https://assets.nishchay.dpdns.org/**",
       ),
