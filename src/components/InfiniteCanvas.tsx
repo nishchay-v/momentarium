@@ -431,7 +431,7 @@ const InfiniteCanvas = ({
       </div>
 
       {/* Kebab Menu to be implemented */}
-      <motion.div
+      {/* <motion.div
         className="absolute top-4 right-4 z-20 pointer-events-none"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -442,7 +442,7 @@ const InfiniteCanvas = ({
             Portfolio
           </span>
         </div>
-      </motion.div>
+      </motion.div> */}
     </motion.div>
   );
 };
