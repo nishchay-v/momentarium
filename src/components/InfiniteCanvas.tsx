@@ -165,7 +165,7 @@ const GridItemComponent = ({
     >
       <div
         ref={innerRef}
-        className="relative w-full h-full overflow-hidden rounded-sm cursor-pointer"
+        className="relative w-full h-full overflow-hidden rounded-xs cursor-pointer"
         style={{
           transformOrigin: "center center",
           transition: "transform 0.1s linear, opacity 0.1s linear" // Smooth out pure JS updates
