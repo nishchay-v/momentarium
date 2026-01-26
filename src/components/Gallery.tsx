@@ -233,149 +233,137 @@ const Gallery = ({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm"
+      className="flex flex-col inset-0 z-50 bg-black/95 backdrop-blur-sm h-screen w-screen pt-16"
       onClick={onClose}
     >
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
-        aria-label="Close gallery"
-      >
-        <X size={CLOSE_BUTTON_ICON_SIZE} />
-      </button>
+      <div className="flex flex-row grow">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 p-2 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
+          aria-label="Close gallery"
+        >
+          <X size={CLOSE_BUTTON_ICON_SIZE} />
+        </button>
 
-      {/* Navigation buttons */}
-      {items.length > 1 && (
-        <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrevious();
-            }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
-            aria-label="Previous image"
+        {/* Previous button */}
+        {items.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevious();
+              }}
+              className="z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm cursor-pointer h"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={NAV_BUTTON_ICON_SIZE} />
+            </button>
+          </>
+        )}
+
+        {/* Main image container */}
+        <div
+          ref={containerRef}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <TransformWrapper
+            ref={transformRef}
+            initialScale={MIN_ZOOM_SCALE}
+            minScale={MIN_ZOOM_SCALE}
+            maxScale={MAX_ZOOM_SCALE}
+            centerOnInit={true}
+            wheel={{ step: WHEEL_ZOOM_STEP }}
+            pinch={{ step: PINCH_ZOOM_STEP }}
+            doubleClick={{ mode: "reset" }}
+            panning={{ disabled: !isZoomed }}
+            onTransformed={handleZoomChange}
+            alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
           >
-            <ChevronLeft size={NAV_BUTTON_ICON_SIZE} />
-          </button>
+            <TransformComponent
+              wrapperStyle={{
+                width: "100%",
+                height: "100%",
+              }}
+              contentStyle={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div className="w-full h-full flex items-center justify-center">
+                <Image
+                  key={currentItem.id}
+                  ref={imageRef}
+                  src={getGalleryUrl(currentItem)}
+                  alt={`Gallery image ${currentIndex + 1}`}
+                  className="object-contain shadow-2xl select-none"
+                  onLoad={handleImageLoad}
+                  width={currentItem.width}
+                  height={currentItem.height}
+                  draggable={false}
+                  unoptimized={true}
+                  placeholder="blur"
+                  blurDataURL={currentItem.img}
+                />
+              </div>
+            </TransformComponent>
+          </TransformWrapper>
+        </div>
+        {/* Next button */}
+        {items.length > 1 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleNext();
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm cursor-pointer"
+            className="z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm cursor-pointer"
             aria-label="Next image"
           >
             <ChevronRight size={NAV_BUTTON_ICON_SIZE} />
           </button>
-        </>
-      )}
-
-      {/* Image counter */}
-      {items.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 text-white/80 text-sm bg-black/20 rounded-full backdrop-blur-sm">
-          {currentIndex + 1} / {items.length}
-        </div>
-      )}
-
-      {/* Main image container */}
-      <div
-        ref={containerRef}
-        className="absolute flex items-center justify-center"
-        style={{
-          top: TOP_UI_HEIGHT,
-          bottom: BOTTOM_UI_HEIGHT,
-          left: SIDE_UI_WIDTH,
-          right: SIDE_UI_WIDTH,
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <TransformWrapper
-          ref={transformRef}
-          initialScale={MIN_ZOOM_SCALE}
-          minScale={MIN_ZOOM_SCALE}
-          maxScale={MAX_ZOOM_SCALE}
-          centerOnInit={true}
-          wheel={{ step: WHEEL_ZOOM_STEP }}
-          pinch={{ step: PINCH_ZOOM_STEP }}
-          doubleClick={{ mode: "reset" }}
-          panning={{ disabled: !isZoomed }}
-          onTransformed={handleZoomChange}
-          alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
-        >
-          <TransformComponent
-            wrapperStyle={{
-              width: "100%",
-              height: "100%",
-            }}
-            contentStyle={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div className="relative w-full h-full flex items-center justify-center">
-              {!isLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                </div>
-              )}
-              <Image
-                key={currentItem.id}
-                ref={imageRef}
-                src={getGalleryUrl(currentItem)}
-                alt={`Gallery image ${currentIndex + 1}`}
-                className="object-contain shadow-2xl select-none"
-                onLoad={handleImageLoad}
-                style={{
-                  opacity: 0,
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  width: "auto",
-                  height: "auto",
-                }}
-                width={currentItem.width}
-                height={currentItem.height}
-                draggable={false}
-              />
-            </div>
-          </TransformComponent>
-        </TransformWrapper>
+        )}
       </div>
-
       {/* Thumbnail strip */}
       {items.length > 1 && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex gap-2 max-w-full overflow-x-auto p-4 pb-2 align-middle">
-          {items.map((item: MediaItem, index: number) => (
-            <button
-              key={item.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (index !== currentIndex) {
-                  resetZoom();
-                  onNavigate(index);
-                }
-              }}
-              className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all duration-200 cursor-pointer ${index === currentIndex
+        <div className="flex flex-col items-center justify-center">
+          <div className="flex gap-2 max-w-full overflow-x-auto p-4 pb-2 align-middle">
+            {items.map((item: MediaItem, index: number) => (
+              <button
+                key={item.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (index !== currentIndex) {
+                    resetZoom();
+                    onNavigate(index);
+                  }
+                }}
+                className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all duration-200 cursor-pointer ${index === currentIndex
                   ? "border-white scale-110"
                   : "border-white/30 hover:border-white/60"
-                }`}
-            >
-              <Image
-                src={item.img}
-                alt={`Thumbnail ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                width={item.width}
-                height={item.height}
-              />
-            </button>
-          ))}
+                  }`}
+              >
+                <Image
+                  src={item.img}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  width={16}
+                  height={16}
+                  unoptimized={true}
+                />
+              </button>
+            ))}
+          </div>
+          {/* Image counter */}
+          <div className="text-white/80 text-sm bg-black/20 rounded-full backdrop-blur-sm my-2">
+            {currentIndex + 1} / {items.length}
+          </div>
         </div>
       )}
     </div>
