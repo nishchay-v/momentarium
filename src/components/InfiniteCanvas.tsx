@@ -159,7 +159,13 @@ const GridItemComponent = ({
         height: `${item.h}px`,
         transformStyle: "preserve-3d",
       }}
-      onClick={() => dragDistanceRef.current < DRAG_THRESHOLD && onItemClick(item)}
+      onPointerUp={(e) => {
+        // Only trigger click if this was a tap/click, not a drag
+        if (dragDistanceRef.current < DRAG_THRESHOLD) {
+          e.stopPropagation();
+          onItemClick(item);
+        }
+      }}
       onMouseEnter={() => scaleOnHover && setIsHovered(true)}
       onMouseLeave={() => scaleOnHover && setIsHovered(false)}
     >

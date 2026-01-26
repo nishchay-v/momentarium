@@ -222,7 +222,7 @@ const Gallery = ({
   return (
     <div
       ref={overlayRef}
-      className="flex flex-col inset-0 z-50 bg-black/95 backdrop-blur-sm h-screen w-screen pt-16"
+      className="fixed flex flex-col inset-0 z-50 bg-black/95 backdrop-blur-sm h-screen w-screen pt-16 overflow-hidden"
       onClick={onClose}
     >
       {/* Hidden preloader for next/prev images */}
@@ -251,7 +251,7 @@ const Gallery = ({
         )}
       </div>
 
-      <div className="flex flex-row grow">
+      <div className="flex flex-row grow items-center min-h-0 overflow-hidden">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -280,6 +280,7 @@ const Gallery = ({
         {/* Main image container */}
         <div
           ref={containerRef}
+          className="flex-1 flex h-full items-center justify-center min-w-0 min-h-0 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -317,7 +318,8 @@ const Gallery = ({
                   ref={imageRef}
                   src={getGalleryUrl(currentItem)}
                   alt={`Gallery image ${currentIndex + 1}`}
-                  className="object-contain shadow-2xl select-none"
+                  className="object-contain shadow-2xl select-none max-h-full max-w-full"
+                  style={{ maxHeight: '100%', maxWidth: '100%' }}
                   onLoad={handleImageLoad}
                   width={currentItem.width}
                   height={currentItem.height}
