@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { gsap } from "gsap";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { isImageCached } from "@/lib/imageCache";
 import { MediaItem } from "./GalleryProvider";
 import Image from "next/image";
 import {
@@ -23,10 +22,8 @@ const getGalleryUrl = (item: MediaItem): string => item.url || item.img;
 const OVERLAY_FADE_IN_DURATION = 0.3;
 // Gallery overlay fade-out duration
 const OVERLAY_FADE_OUT_DURATION = 0.2;
-// Image fade-in duration for cached images (faster)
-const CACHED_IMAGE_FADE_DURATION = 0.15;
-// Image fade-in duration for uncached images
-const UNCACHED_IMAGE_FADE_DURATION = 0.25;
+// Standard image fade-in duration
+const IMAGE_FADE_DURATION = 0.25;
 // Initial image scale before fade-in
 const INITIAL_IMAGE_SCALE = 0.95;
 // Final image scale after fade-in
@@ -51,13 +48,6 @@ const WHEEL_ZOOM_STEP = 10;
 const CLOSE_BUTTON_ICON_SIZE = 24;
 // Navigation button icon size
 const NAV_BUTTON_ICON_SIZE = 28;
-
-// UI element heights for calculating available image space
-const TOP_UI_HEIGHT = 24;
-const BOTTOM_UI_HEIGHT = 160;
-// Side navigation buttons width (p-3 = 12px + icon 28px + left/right-4 = 16px)
-const SIDE_UI_WIDTH = 72;
-
 
 interface GalleryProps {
   items: MediaItem[];
@@ -87,10 +77,14 @@ const Gallery = ({
 
   const currentItem = items[currentIndex];
   const currentUrl = currentItem ? getGalleryUrl(currentItem) : null;
-  // Check if the gallery (full-size) image is cached
-  const isCached = currentUrl ? isImageCached(currentUrl) : false;
   // Image is considered loaded if the loadedUrl matches current image
   const isLoaded = loadedUrl === currentUrl;
+
+  // Preloading indices
+  const nextIndex = (currentIndex + 1) % items.length;
+  const prevIndex = (currentIndex - 1 + items.length) % items.length;
+  const nextItem = items[nextIndex];
+  const prevItem = items[prevIndex];
 
   // Reset zoom when navigating to a different image
   const resetZoom = useCallback(() => {
@@ -174,17 +168,12 @@ const Gallery = ({
   useEffect(() => {
     if (!imageRef.current || !isLoaded) return;
 
-    // Faster animation for cached images
-    const duration = isCached
-      ? CACHED_IMAGE_FADE_DURATION
-      : UNCACHED_IMAGE_FADE_DURATION;
-
     gsap.fromTo(
       imageRef.current,
       { opacity: 0, scale: INITIAL_IMAGE_SCALE },
-      { opacity: 1, scale: FINAL_IMAGE_SCALE, duration, ease: "power2.out" },
+      { opacity: 1, scale: FINAL_IMAGE_SCALE, duration: IMAGE_FADE_DURATION, ease: "power2.out" },
     );
-  }, [isLoaded, isCached]);
+  }, [isLoaded]);
 
   const handleImageLoad = useCallback(() => {
     if (currentUrl) {
@@ -236,6 +225,32 @@ const Gallery = ({
       className="flex flex-col inset-0 z-50 bg-black/95 backdrop-blur-sm h-screen w-screen pt-16"
       onClick={onClose}
     >
+      {/* Hidden preloader for next/prev images */}
+      <div className="hidden">
+        {nextItem && items.length > 1 && (
+             <Image 
+                src={getGalleryUrl(nextItem)} 
+                alt="preload" 
+                width={1} 
+                height={1} 
+                priority={true} 
+                className="hidden"
+                unoptimized={true} // Match main image unoptimized state
+             />
+        )}
+        {prevItem && items.length > 1 && prevIndex !== nextIndex && (
+             <Image 
+                src={getGalleryUrl(prevItem)} 
+                alt="preload" 
+                width={1} 
+                height={1} 
+                priority={true} 
+                className="hidden"
+                unoptimized={true} // Match main image unoptimized state
+             />
+        )}
+      </div>
+
       <div className="flex flex-row grow">
         {/* Close button */}
         <button
@@ -307,7 +322,8 @@ const Gallery = ({
                   width={currentItem.width}
                   height={currentItem.height}
                   draggable={false}
-                  unoptimized={true}
+                  priority={true} // Ensure current image is prioritized
+                  unoptimized={true} // Keep unoptimized for now to match thumbnails/cache behavior unless we are sure R2 handles optimization
                   placeholder="blur"
                   blurDataURL={currentItem.img}
                 />

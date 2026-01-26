@@ -1,87 +1,47 @@
 /**
- * Simple image cache utility for preloading and caching images
- * Tracks both completed loads and in-flight requests to avoid duplicates
+ * Simple image preload utility.
+ * Relies on browser cache rather than internal state.
  */
 
-// Cache of completed image loads (url -> success/failure)
-const cache = new Map<string, boolean>();
-
-// Track in-flight requests to avoid duplicate network calls
-const inFlightRequests = new Map<string, Promise<void>>();
-
 /**
- * Preload a single image and cache the result
- * Returns immediately for cached images and dedupes in-flight requests
+ * Preload a single image.
+ * Returns a promise that resolves when the image is loaded or errors.
  */
 export const preloadImage = (url: string): Promise<void> => {
-  // Return immediately if already cached
-  if (cache.has(url)) {
-    return Promise.resolve();
-  }
+  return new Promise<void>((resolve) => {
+    if (typeof window === "undefined") {
+      resolve();
+      return;
+    }
 
-  // Return existing in-flight request if one exists
-  const existingRequest = inFlightRequests.get(url);
-  if (existingRequest) {
-    return existingRequest;
-  }
-
-  // Create new preload request
-  const request = new Promise<void>((resolve) => {
     const img = new Image();
-    img.onload = () => {
-      cache.set(url, true);
-      inFlightRequests.delete(url);
-      resolve();
-    };
-    img.onerror = () => {
-      // Cache even on error to avoid repeated failed attempts
-      cache.set(url, false);
-      inFlightRequests.delete(url);
-      resolve();
-    };
+    img.onload = () => resolve();
+    img.onerror = () => resolve(); // Resolve on error to avoid blocking
     img.src = url;
   });
-
-  inFlightRequests.set(url, request);
-  return request;
 };
 
 /**
- * Preload multiple images in parallel
- * Filters out already-cached images automatically
+ * Preload multiple images in parallel.
  */
 export const preloadImages = async (urls: string[]): Promise<void> => {
-  const uncachedUrls = urls.filter(url => !cache.has(url));
-  if (uncachedUrls.length > 0) {
-    await Promise.all(uncachedUrls.map((url) => preloadImage(url)));
-  }
+  await Promise.all(urls.map((url) => preloadImage(url)));
 };
 
 /**
- * Check if an image is cached (load completed)
+ * Check if an image is cached (load completed).
+ * Note: This is a best-guess based on the browser's ability to load it immediately.
+ * For true accuracy, checking `img.complete` on an actual DOM element is better.
  */
 export const isImageCached = (url: string): boolean => {
-  return cache.has(url);
+  if (typeof window === "undefined") return false;
+  // We can't synchronously check browser cache without an Image element.
+  // This function is kept for API compatibility but always returns false
+  // to encourage components to handle loading states gracefully.
+  return false;
 };
 
-/**
- * Check if an image is currently being loaded
- */
-export const isImageLoading = (url: string): boolean => {
-  return inFlightRequests.has(url);
-};
-
-/**
- * Clear the entire cache (useful for memory management)
- */
-export const clearCache = (): void => {
-  cache.clear();
-  inFlightRequests.clear();
-};
-
-/**
- * Get cache size
- */
-export const getCacheSize = (): number => {
-  return cache.size;
-};
+// Deprecated/No-op functions kept for compatibility during refactor
+export const isImageLoading = (url: string): boolean => false;
+export const clearCache = (): void => {};
+export const getCacheSize = (): number => 0;
