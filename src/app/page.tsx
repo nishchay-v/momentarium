@@ -150,7 +150,7 @@ function InfiniteCanvasView() {
       {/* Main infinite canvas - full screen */}
       <InfiniteCanvasWrapper
         items={displayItems}
-        scaleOnHover={true}
+        scaleOnHover={false}
         hoverScale={HOVER_SCALE}
       />
     </>

@@ -6,6 +6,11 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { isImageCached } from "@/lib/imageCache";
 import { MediaItem } from "./GalleryProvider";
 import Image from "next/image";
+import {
+  TransformWrapper,
+  TransformComponent,
+  ReactZoomPanPinchRef,
+} from "react-zoom-pan-pinch";
 
 /**
  * Get the gallery (full-size) URL for a media item.
@@ -31,11 +36,28 @@ const FINAL_IMAGE_SCALE = 1;
 // Minimum swipe distance (px) to trigger navigation
 const SWIPE_THRESHOLD = 50;
 
+// ZOOM CONFIGURATION
+// Maximum zoom level (200%)
+const MAX_ZOOM_SCALE = 2;
+// Minimum zoom level (100%)
+const MIN_ZOOM_SCALE = 1;
+// Pinch 
+const PINCH_ZOOM_STEP = 20;
+// Wheel zoom step
+const WHEEL_ZOOM_STEP = 10;
+
 // UI SIZES AND SPACING
 // Close button icon size
 const CLOSE_BUTTON_ICON_SIZE = 24;
 // Navigation button icon size
 const NAV_BUTTON_ICON_SIZE = 28;
+
+// UI element heights for calculating available image space
+const TOP_UI_HEIGHT = 24;
+const BOTTOM_UI_HEIGHT = 160;
+// Side navigation buttons width (p-3 = 12px + icon 28px + left/right-4 = 16px)
+const SIDE_UI_WIDTH = 72;
+
 
 interface GalleryProps {
   items: MediaItem[];
@@ -55,10 +77,13 @@ const Gallery = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   // Track which image URL has been loaded (use URL instead of index for reliability)
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  // Track if user is currently zoomed in (to disable swipe navigation)
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const currentItem = items[currentIndex];
   const currentUrl = currentItem ? getGalleryUrl(currentItem) : null;
@@ -67,17 +92,27 @@ const Gallery = ({
   // Image is considered loaded if the loadedUrl matches current image
   const isLoaded = loadedUrl === currentUrl;
 
+  // Reset zoom when navigating to a different image
+  const resetZoom = useCallback(() => {
+    if (transformRef.current) {
+      transformRef.current.resetTransform(0); // Instant reset (0ms duration)
+    }
+    setIsZoomed(false);
+  }, []);
+
   const handlePrevious = useCallback(() => {
     if (items.length <= 1) return;
+    resetZoom();
     const newIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
     onNavigate(newIndex);
-  }, [items, currentIndex, onNavigate]);
+  }, [items, currentIndex, onNavigate, resetZoom]);
 
   const handleNext = useCallback(() => {
     if (items.length <= 1) return;
+    resetZoom();
     const newIndex = currentIndex === items.length - 1 ? 0 : currentIndex + 1;
     onNavigate(newIndex);
-  }, [items, currentIndex, onNavigate]);
+  }, [items, currentIndex, onNavigate, resetZoom]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -157,17 +192,29 @@ const Gallery = ({
     }
   }, [currentUrl]);
 
-  // Touch handlers for mobile swipe
+  // Handle zoom state changes
+  const handleZoomChange = useCallback(
+    (ref: ReactZoomPanPinchRef) => {
+      const scale = ref.state.scale;
+      setIsZoomed(scale > MIN_ZOOM_SCALE + 0.01); // Small threshold to handle floating point
+    },
+    []
+  );
+
+  // Touch handlers for mobile swipe (only when not zoomed)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isZoomed) return; // Don't track swipes when zoomed
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (isZoomed) return; // Don't track swipes when zoomed
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
   const handleTouchEnd = () => {
+    if (isZoomed) return; // Don't navigate when zoomed
     if (!touchStart || !touchEnd) return;
 
     const distance = touchStart - touchEnd;
@@ -216,7 +263,7 @@ const Gallery = ({
               e.stopPropagation();
               handleNext();
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 text-white/80 hover:text-white transition-colors duration-200 bg-black/20 rounded-full backdrop-blur-sm cursor-pointer"
             aria-label="Next image"
           >
             <ChevronRight size={NAV_BUTTON_ICON_SIZE} />
@@ -234,49 +281,90 @@ const Gallery = ({
       {/* Main image container */}
       <div
         ref={containerRef}
-        className="flex items-center justify-center w-full h-screen p-4 md:p-8"
+        className="absolute flex items-center justify-center"
+        style={{
+          top: TOP_UI_HEIGHT,
+          bottom: BOTTOM_UI_HEIGHT,
+          left: SIDE_UI_WIDTH,
+          right: SIDE_UI_WIDTH,
+        }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative h-100 max-w-full max-h-full flex items-center justify-center">
-          {!isLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <TransformWrapper
+          ref={transformRef}
+          initialScale={MIN_ZOOM_SCALE}
+          minScale={MIN_ZOOM_SCALE}
+          maxScale={MAX_ZOOM_SCALE}
+          centerOnInit={true}
+          wheel={{ step: WHEEL_ZOOM_STEP }}
+          pinch={{ step: PINCH_ZOOM_STEP }}
+          doubleClick={{ mode: "reset" }}
+          panning={{ disabled: !isZoomed }}
+          onTransformed={handleZoomChange}
+          alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
+        >
+          <TransformComponent
+            wrapperStyle={{
+              width: "100%",
+              height: "100%",
+            }}
+            contentStyle={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div className="relative w-full h-full flex items-center justify-center">
+              {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+              <Image
+                key={currentItem.id}
+                ref={imageRef}
+                src={getGalleryUrl(currentItem)}
+                alt={`Gallery image ${currentIndex + 1}`}
+                className="object-contain shadow-2xl select-none"
+                onLoad={handleImageLoad}
+                style={{
+                  opacity: 0,
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  width: "auto",
+                  height: "auto",
+                }}
+                width={currentItem.width}
+                height={currentItem.height}
+                draggable={false}
+              />
             </div>
-          )}
-          <Image
-            key={currentItem.id}
-            ref={imageRef}
-            src={getGalleryUrl(currentItem)}
-            alt={`Gallery image ${currentIndex + 1}`}
-            className="max-w-full max-h-full object-contain shadow-2xl"
-            onLoad={handleImageLoad}
-            style={{ opacity: 0 }}
-            width={currentItem.width}
-            height={currentItem.height}
-          />
-        </div>
+          </TransformComponent>
+        </TransformWrapper>
       </div>
 
       {/* Thumbnail strip */}
       {items.length > 1 && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex gap-2 max-w-full overflow-x-auto px-4 pb-2">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex gap-2 max-w-full overflow-x-auto p-4 pb-2 align-middle">
           {items.map((item: MediaItem, index: number) => (
             <button
               key={item.id}
               onClick={(e) => {
                 e.stopPropagation();
                 if (index !== currentIndex) {
+                  resetZoom();
                   onNavigate(index);
                 }
               }}
-              className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all duration-200 ${
-                index === currentIndex
+              className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all duration-200 cursor-pointer ${index === currentIndex
                   ? "border-white scale-110"
                   : "border-white/30 hover:border-white/60"
-              }`}
+                }`}
             >
               <Image
                 src={item.img}
